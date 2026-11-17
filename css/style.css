@@ -127,7 +127,7 @@ body {
   transition: opacity 1s ease 0.6s;
 }
 
-/* ---------- Puppets (placeholder silhouettes in Task 1) ---------- */
+/* ---------- Puppets (shared layout; each puppet's own art and motion has its section below) ---------- */
 .puppets {
   position: absolute; inset: 0 5% 3% 5%;
   display: flex; justify-content: space-around; align-items: flex-start;
@@ -436,6 +436,69 @@ body {
 @keyframes cd-simmer { 0% { transform: translateY(3px) scale(0.5); opacity: 0; } 30% { opacity: 1; } 70% { transform: translateY(-4px) scale(1.15); opacity: 1; } 78%, 100% { transform: translateY(-5px) scale(1.5); opacity: 0; } }
 @keyframes cd-slosh { 0%, 100% { transform: scale(1) rotate(0); } 30%, 60% { transform: scale(1.04, 1.4) rotate(-5deg); } 45% { transform: scale(1.02, 1.2) rotate(4deg); } }
 @keyframes cd-nod { 0%, 100% { transform: rotate(0) translateY(0); } 32%, 62% { transform: rotate(-9deg) translateY(2px); } }
+
+/* ---------- Ghost puppet (Task 7) ---------- */
+/* ghostPose() (js/ghost-art.js) sets --gh-sx / --gh-sy / --gh-lean / --gh-sus from the audio clock:
+   the sheet stretches with every note and breathes while a chord is held. --lit lights the item. */
+.puppet--ghost { --lit: 1; }
+.puppet--ghost.is-asleep { --lit: 0.1; }
+.puppet--ghost svg { transform: none; }          /* the generic energy pulse is replaced by real motion */
+.puppet--ghost:focus-visible { outline: 2px solid #F7C873; outline-offset: 4px; border-radius: 8px; }
+
+.gh-float { animation: gh-float 4.2s ease-in-out infinite; }
+.gh-shadow { transform-box: fill-box; transform-origin: center; animation: gh-shadow 4.2s ease-in-out infinite; }
+.gh-squash {
+  transform-box: view-box; transform-origin: 70px 214px;
+  transform: rotate(var(--gh-lean, 0deg)) scale(var(--gh-sx, 1), var(--gh-sy, 1));
+}
+
+/* face: the mouth opens as the pad swells; tears run on the fretful face */
+.gh-mouth { transform-box: fill-box; transform-origin: 50% 30%; transform: scale(calc(0.85 + var(--gh-sus, 0) * 0.3), calc(0.8 + var(--gh-sus, 0) * 0.4)); }
+.gh-closed { display: none; }
+.gh-open { transform-box: fill-box; transform-origin: center; animation: gh-blink 6.4s infinite; }
+.gh-tear { transform-box: fill-box; transform-origin: 50% 0; animation: gh-tear 2.8s ease-in infinite; }
+.gh-tear-r { animation-delay: -1.4s; }
+
+/* hats */
+.gh-cap { transform-box: view-box; transform-origin: 70px 112px; transition: transform 0.5s; }
+.gh-pom { transform-box: fill-box; transform-origin: 50% 100%; animation: gh-pom 3.6s ease-in-out infinite; }
+
+/* items */
+.gh-lit { opacity: calc(var(--lit) * (0.3 + var(--gh-sus, 0) * 0.65)); }
+.gh-flame { transform-box: fill-box; transform-origin: 50% 100%; transform: scale(calc(0.85 + var(--gh-sus, 0) * 0.3)); animation: cd-flicker 1.3s ease-in-out infinite; }
+.gh-glass { filter: brightness(calc(0.8 + var(--gh-sus, 0) * 0.5)); }
+.gh-swing { transform-box: view-box; transform-origin: 120px 178px; animation: gh-swing 3.2s ease-in-out infinite; }
+.gh-hand { transform-box: view-box; transform-origin: 120px 207px; animation: gh-tick 8s steps(8) infinite; }
+.gh-quill { transform-box: view-box; transform-origin: 120px 176px; animation: gh-write 2.4s ease-in-out infinite; }
+.gh-note { animation: gh-notes 1.07s ease-in-out infinite; }
+
+/* dozing: floats low and slow, eyes shut, the hat slumps and the item rests */
+.puppet--ghost.is-asleep .gh-float { animation: none; transform: translateY(5px); }
+.puppet--ghost.is-asleep .gh-shadow { animation: none; transform: scale(1.12); }
+.puppet--ghost.is-asleep .gh-open { display: none; }
+.puppet--ghost.is-asleep .gh-closed { display: inline; }
+.puppet--ghost.is-asleep .gh-mouth { transform: scale(0.55, 0.4); }
+.puppet--ghost.is-asleep .gh-blush { opacity: 0.75; }
+.puppet--ghost.is-asleep .gh-tear { animation: none; }
+.puppet--ghost.is-asleep .gh-cap { transform: translate(3px, 5px) rotate(9deg); }
+.puppet--ghost.is-asleep .gh-pom { animation: none; transform: rotate(18deg); }
+.puppet--ghost.is-asleep .gh-flame { animation: none; transform: scale(0.5); }
+.puppet--ghost.is-asleep .gh-swing, .puppet--ghost.is-asleep .gh-hand, .puppet--ghost.is-asleep .gh-note { animation: none; }
+.puppet--ghost.is-asleep .gh-quill { animation: none; transform: rotate(-38deg); }
+
+/* curtain call: the ghost tips forward with the others and doffs its hat */
+.proscenium[data-state='curtain_call'] .puppet--ghost .gh-cap { animation: gh-doff 1.5s ease-in-out both; }
+
+@keyframes gh-float { 0%, 100% { transform: translateY(1px); } 50% { transform: translateY(-3.5px); } }
+@keyframes gh-shadow { 0%, 100% { transform: scale(1); opacity: 0.25; } 50% { transform: scale(0.86); opacity: 0.17; } }
+@keyframes gh-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } }
+@keyframes gh-tear { 0% { transform: translateY(-2px) scale(0.5); opacity: 0; } 25% { transform: translateY(0) scale(1); opacity: 1; } 80% { transform: translateY(9px) scale(0.9); opacity: 0.85; } 100% { transform: translateY(14px) scale(0.6); opacity: 0; } }
+@keyframes gh-pom { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(7deg); } }
+@keyframes gh-swing { 0%, 100% { transform: rotate(-9deg); } 50% { transform: rotate(9deg); } }
+@keyframes gh-tick { to { transform: rotate(360deg); } }
+@keyframes gh-write { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(5deg); } }
+@keyframes gh-notes { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-1.4px); } }
+@keyframes gh-doff { 0%, 100% { transform: translate(0, 0) rotate(0); } 30%, 62% { transform: translate(-6px, -11px) rotate(-16deg); } }
 
 /* ---------- Play / Stop buttons ---------- */
 .controls { display: flex; justify-content: center; gap: 18px; margin: 28px 0 24px; }

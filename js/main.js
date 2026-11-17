@@ -7,6 +7,7 @@ import {
   applySkeletonParts, setArmVars, strikePose, gagPose, applyGagPose, clearGagPose, GAG_HITS, GAG_PLACE,
 } from './skeleton-art.js';
 import { applyCauldronParts, BubbleField } from './cauldron-art.js';
+import { applyGhostParts, ghostPose, setGhostVars } from './ghost-art.js';
 import { isAudible } from './music.js';
 import { generateBandInfo, fileStem } from './band.js';
 import { renderPoster, posterToBlob } from './poster.js';
@@ -49,6 +50,7 @@ PUPPETS.forEach((p) => {
 applyPumpkinParts(puppetEls.get('pumpkin'), tracks[0].slots);
 applySkeletonParts(puppetEls.get('skeleton'), tracks[1].slots);
 applyCauldronParts(puppetEls.get('cauldron'), tracks[2].slots);
+applyGhostParts(puppetEls.get('ghost'), tracks[3].slots);
 
 // ---- Poking and previews (Req 2.2, 2.3, 2.4) ----
 // A muted puppet snaps awake for the length of its one note, then dozes off again.
@@ -110,11 +112,12 @@ stage.addEventListener('stagechange', (e) => {
 
 // ---- Motion: drive each puppet's --energy from the audio output clock ----
 function frame() {
-  const { energy, detail } = engine.update();
+  const { energy, detail, now } = engine.update();
   puppetEls.forEach((el, id) => el.style.setProperty('--energy', energy[id].toFixed(3)));
   syncSleep(); // lets a poked puppet fall back asleep once its wake time is over
   updateSkeleton(detail.skeleton);
   updateCauldron(detail.cauldron);
+  setGhostVars(puppetEls.get('ghost'), ghostPose(detail.ghost, now));
   requestAnimationFrame(frame);
 }
 
@@ -199,6 +202,7 @@ panel.addEventListener('click', (e) => {
     if (t.id === 'pumpkin') applyPumpkinParts(puppetEls.get('pumpkin'), t.slots); // new look, instantly
     if (t.id === 'skeleton') applySkeletonParts(puppetEls.get('skeleton'), t.slots);
     if (t.id === 'cauldron') applyCauldronParts(puppetEls.get('cauldron'), t.slots);
+    if (t.id === 'ghost') applyGhostParts(puppetEls.get('ghost'), t.slots);
     poke(t.id, +opt.dataset.slot); // Req 2.2: preview one note with the new timbre
     updatePlaybill();
     return;

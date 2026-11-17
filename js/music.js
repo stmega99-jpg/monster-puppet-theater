@@ -13,6 +13,11 @@ export const TRACK_IDS = ['pumpkin', 'skeleton', 'cauldron', 'ghost'];
 /** Duration of one 16th-note step in seconds. */
 export const stepDuration = (bpm = BPM) => 60 / bpm / 4;
 
+// Ensemble balance: a gain per track in front of the master bus, set by measuring each puppet on its own
+// (mean loudness over all 27 slot combinations, high-passed at 150 Hz for laptop speakers): the lead
+// sits on top, drums and bass just under it, and the pad behind them. 1 = the gains from design.md as written.
+export const TRACK_TRIM = { pumpkin: 1, skeleton: 1.15, cauldron: 1.6, ghost: 0.65 };
+
 // Cm -> Ab -> Fm -> G7. Every `chord` has exactly 4 notes so skeleton ribs M0..M3 map to chord[0..3].
 export const CHORD_MAP = [
   // 0: Cm (Steps 0..7)  - Bass: C2, G2, C3 / Chord: C4, Eb4, G4, C5

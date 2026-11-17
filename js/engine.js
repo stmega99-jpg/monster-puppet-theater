@@ -17,6 +17,11 @@ import {
   pumpkinVoice, skeletonKick, skeletonSnare, skeletonRib, cauldronVoice, ghostVoice,
 } from './voices.js';
 
+export const GHOST_SWELL = 0.12;   // seconds the ghost's motion takes to swell in with a note
+export const GHOST_SETTLE = 0.3;   // time constant of the settle after a note is released
+// A chord splits the ghost's level between its four notes, so it needs twice the level of a single
+// note to be as loud (equal RMS). Keeps the three voicings (Slot B) at the same loudness.
+const CHORD_LEVEL = 2;
 export const TAU = 0.18;            // motion decay constant in seconds
 const LOOKAHEAD = 0.15;             // seconds scheduled ahead of the clock
 const TICK_MS = 25;                 // scheduler interval
@@ -30,6 +35,7 @@ const STALE_TOLERANCE = 0.02;       // steps later than this are skipped, not pl
  * @param {object} p
  * @param {BaseAudioContext} p.ctx
  * @param {AudioNode} p.out           destination (master bus input)
+ * @param {object} [p.trims]          per-track trim nodes of the master bus (ensemble balance); falls back to `out`
  * @param {Array} p.tracks            [{ id, slots, mute, solo }] in TRACK_IDS order
  * @param {number} p.stepIndex        global step counter (not wrapped)
  * @param {number} p.baseStepTime     unswung start time of the step
@@ -38,7 +44,7 @@ const STALE_TOLERANCE = 0.02;       // steps later than this are skipped, not pl
  * @param {(event) => void} p.emit      called with the visual event for every note
  * @param {object} [p.state]            per-run memory (e.g. the pumpkin's previous pitch for portamento)
  */
-export function scheduleStep({ ctx, out, tracks, stepIndex, baseStepTime, stepDur, register, emit, state = {} }) {
+export function scheduleStep({ ctx, out: busIn, trims, tracks, stepIndex, baseStepTime, stepDur, register, emit, state = {} }) {
   const step = stepIndex % STEPS_PER_LOOP;
   const k = step % STEPS_PER_CHORD;
   const chord = CHORD_MAP[Math.floor(step / STEPS_PER_CHORD)];
@@ -51,8 +57,10 @@ export function scheduleStep({ ctx, out, tracks, stepIndex, baseStepTime, stepDu
     const ev = pattern[k];
     if (ev === -1) return;
 
+    const out = trims?.[track.id] ?? busIn;
     let voice;
     let freq = null;
+    let duration = null;
     switch (track.id) {
       case 'pumpkin':
         freq = chord.scale[ev];
@@ -73,12 +81,12 @@ export function scheduleStep({ ctx, out, tracks, stepIndex, baseStepTime, stepDu
         voice = cauldronVoice(ctx, out, scheduledTime, freq, cauldronOptions(track));
         break;
       case 'ghost': {
-        const duration = holdSteps(pattern, k) * stepDur;
+        duration = holdSteps(pattern, k) * stepDur;
         if (ev === 'C') {
-          voice = ghostVoice(ctx, out, scheduledTime, chord.chord, duration);
+          voice = ghostVoice(ctx, out, scheduledTime, chord.chord, duration, CHORD_LEVEL, ghostOptions(track));
         } else { // 'A0'..'A3': one chord tone
           freq = chord.chord[Number(ev[1])];
-          voice = ghostVoice(ctx, out, scheduledTime, [freq], duration, 1.6);
+          voice = ghostVoice(ctx, out, scheduledTime, [freq], duration, 1, ghostOptions(track));
         }
         break;
       }
@@ -88,13 +96,18 @@ export function scheduleStep({ ctx, out, tracks, stepIndex, baseStepTime, stepDu
 
     register(voice);
     // The same scheduledTime that went to the audio nodes goes to the visual queue.
-    emit({ trackId: track.id, time: scheduledTime, kind: ev, freq, step });
+    emit({ trackId: track.id, time: scheduledTime, kind: ev, freq, step, duration });
   });
 }
 
 /** Slot A (eyes) = timbre, Slot C (mouth) = playing style. */
 function pumpkinOptions(track, prevFreq = null) {
   return { timbre: track.slots[0], style: track.slots[2], prevFreq };
+}
+
+/** Slot A (hat) = voice, Slot C (item) = modulation. Slot B (face) is the voicing, handled by the pattern. */
+function ghostOptions(track) {
+  return { voice: track.slots[0], item: track.slots[2] };
 }
 
 /** Slot A (pot) = waveform and filter, Slot C (flame) = envelope. */
@@ -104,6 +117,7 @@ function cauldronOptions(track) {
 
 // Pitches for pokes and slot previews: a gentle walk through the current chord's scale.
 const POKE_DEGREES = [0, 2, 3, 4, 3, 2];
+const POKE_CHORD = [0, 1, 2, 3, 2, 1];  // ghost pokes: one chord tone at a time, walking up and down the chord
 const POKE_BASS = ['R', 'F', 'O', 'F'];  // cauldron pokes: root, fifth, octave, fifth of the current chord
 const POKE_ROWS = [0, 1, 2, 3, 2, 1];   // rib rows for skeleton pokes: a short walk up and down the ribs
 
@@ -129,6 +143,7 @@ export class AudioEngine {
   /** Per-track motion memory. The skeleton also remembers its kick, snare and the last rib struck by each arm. */
   _freshMotion(id) {
     const m = { lastNoteTime: null, lastEvent: null };
+    if (id === 'ghost') Object.assign(m, { holdStart: null, holdEnd: null });
     if (id === 'skeleton') Object.assign(m, { kickTime: null, snareTime: null, arms: [{ time: null, row: 0 }, { time: null, row: 0 }], malletCount: 0 });
     return m;
   }
@@ -205,15 +220,15 @@ export class AudioEngine {
     return CHORD_MAP[Math.floor((idx % STEPS_PER_LOOP) / STEPS_PER_CHORD)];
   }
 
-  /** True for the tracks that can sound a one-shot note (the pumpkin, the skeleton and the cauldron so far). */
+  /** True for the tracks that can sound a one-shot note (every puppet). */
   hasOneShot(trackId) {
-    return trackId === 'pumpkin' || trackId === 'skeleton' || trackId === 'cauldron';
+    return trackId === 'pumpkin' || trackId === 'skeleton' || trackId === 'cauldron' || trackId === 'ghost';
   }
 
   /**
    * Play a note of a track right now, whether or not the loop is running and even if the track is
    * muted (Req 2.3, 2.4). Used for pokes and for the preview after a slot change (Req 2.2).
-   * Pumpkin: one lead note. Cauldron: one bass note (root, fifth, octave in turn). Skeleton: one rib note (the arms take turns), or, when `slot` is 0
+   * Pumpkin: one lead note. Cauldron: one bass note (root, fifth, octave in turn). Ghost: one chord tone, held for 0.9 s. Skeleton: one rib note (the arms take turns), or, when `slot` is 0
    * (the head / drum tone changed), a kick followed by the snare. Returns true when something was scheduled.
    * Call from a user gesture.
    */
@@ -223,7 +238,7 @@ export class AudioEngine {
     this._ensureContext();
     if (this.ctx.state !== 'running') await this.ctx.resume();
     const ctx = this.ctx;
-    const out = this.bus.input;
+    const out = this.bus.trims[trackId];
     const chord = this.currentChord();
     const when = ctx.currentTime + 0.02;
 
@@ -232,6 +247,15 @@ export class AudioEngine {
       // Poke notes never glide: there is no previous pitch to slide from.
       this._register(pumpkinVoice(ctx, out, when, freq, pumpkinOptions(track, null)));
       this._enqueue({ trackId, time: when, kind: 'poke', freq, step: null });
+      return true;
+    }
+
+    if (trackId === 'ghost') {
+      const row = POKE_CHORD[this.pokeCount++ % POKE_CHORD.length];
+      const freq = chord.chord[row];
+      const duration = 0.9;
+      this._register(ghostVoice(ctx, out, when, [freq], duration, 1, ghostOptions(track)));
+      this._enqueue({ trackId, time: when, kind: `A${row}`, freq, step: null, duration });
       return true;
     }
 
@@ -271,7 +295,7 @@ export class AudioEngine {
       [hitTimes[0], 392.00, 1.0], [hitTimes[1], 311.13, 0.7], [hitTimes[2], 261.63, 0.45], [placeTime, 523.25, 0.55],
     ];
     notes.forEach(([t, freq, gain]) => {
-      this._register(skeletonRib(this.ctx, this.bus.input, start + t, freq, track.slots[2], { gain, decay: 0.28 }));
+      this._register(skeletonRib(this.ctx, this.bus.trims.skeleton, start + t, freq, track.slots[2], { gain, decay: 0.28 }));
     });
   }
 
@@ -284,6 +308,7 @@ export class AudioEngine {
       scheduleStep({
         ctx,
         out: this.bus.input,
+        trims: this.bus.trims,
         tracks: this.tracks,
         stepIndex: this.stepIndex,
         baseStepTime: at(this.stepIndex),
@@ -310,6 +335,7 @@ export class AudioEngine {
     const energy = Object.fromEntries(this.tracks.map((t) => [t.id, 0]));
     const detail = { skeleton: { kick: 0, snare: 0, arms: [{ energy: 0, row: 0 }, { energy: 0, row: 0 }] } };
     detail.cauldron = { hits: [] };
+    detail.ghost = { sustain: 0, onset: 0 };
     if (!this.ctx) return { now: 0, energy, detail };
     const now = this.getOutputTime();
     while (this.visualQueue.length && this.visualQueue[0].time <= now) {
@@ -317,6 +343,7 @@ export class AudioEngine {
       const m = this.motion[e.trackId];
       m.lastNoteTime = e.time;
       m.lastEvent = e;
+      if (e.trackId === 'ghost') { m.holdStart = e.time; m.holdEnd = e.time + (e.duration ?? 0.9); }
       if (e.trackId === 'cauldron') detail.cauldron.hits.push({ kind: e.kind, freq: e.freq });
       if (e.trackId === 'skeleton') {
         if (e.kind === 'K') m.kickTime = e.time;
@@ -329,6 +356,14 @@ export class AudioEngine {
     }
     const decay = (time) => (time === null ? 0 : Math.exp(-(now - time) / TAU));
     this.tracks.forEach((t) => { energy[t.id] = decay(this.motion[t.id].lastNoteTime); });
+    // The ghost sings a held pad: it swells in over the attack, stays up while the note is held,
+    // and settles back with the release. `onset` is the quick stretch at the start of each note.
+    const gh = this.motion.ghost;
+    if (gh.holdStart !== null) {
+      const swell = Math.min(1, Math.max(0, (now - gh.holdStart) / GHOST_SWELL));
+      const held = now <= gh.holdEnd ? 1 : Math.exp(-(now - gh.holdEnd) / GHOST_SETTLE);
+      detail.ghost = { sustain: swell * held, onset: decay(gh.holdStart) };
+    }
     const sk = this.motion.skeleton;
     detail.skeleton = {
       kick: decay(sk.kickTime),
