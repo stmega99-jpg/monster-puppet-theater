@@ -1,31 +1,31 @@
 # Requirements: Jack-o'-Lantern Synth: Monster Puppet Session
 
-## 概要
-アンティーク木彫り人形と色褪せた絵本の世界観を持つミニチュア劇場（Haunted Puppet Theater）を舞台に、4体の怪物パペット（🎃かぼちゃ、💀骸骨、🧪大釜、👻幽霊）をカスタマイズしてゴシック合奏させ、公演ポスター（PNG）とシームレスループ音源（WAV）を持ち帰れるインタラクティブ音楽トイ。
+## Overview
+An interactive music toy set in a miniature Haunted Puppet Theater with antique wood-carved puppets and a faded storybook look. The user customizes four monster puppets (🎃 Pumpkin, 💀 Skeleton, 🧪 Cauldron, 👻 Ghost), has them perform a gothic ensemble, and takes home a performance poster (PNG) and a seamless loop recording (WAV).
 
-## 要件一覧 (EARS記法)
+## Requirements (EARS notation)
 
-### Req 1: 人形劇ステージと開演・閉演お辞儀（カーテンコール）演出
-- **1.1**: WHEN アプリが起動した時 THE SYSTEM SHALL アンティーク木彫りの額縁、深紅のベルベットカーテン、足元のロウソク（フットライト）を備えた人形劇ステージを表示する。
-- **1.2**: WHEN ユーザーが「Play（開演）」ボタンを押した時 THE SYSTEM SHALL 既存の予約ノードとタイマーをリセットした上で `AudioContext` を再開し、カーテンが開いてフットライトが点灯し、4トラック同期のループ合奏を開始する。
-- **1.3**: WHEN ユーザーが再生中に「Stop（閉演）」ボタンを押した時 THE SYSTEM SHALL ループの予約発音と視覚キューを即座に破棄し、約1.8秒間の「カーテンコール（一斉お辞儀）」演出を再生した後にカーテンを閉じる。
-- **1.4**: WHEN カーテンコール（お辞儀）演出が再生された時 THE SYSTEM SHALL 骸骨パペット（有効時）の頭蓋骨がお辞儀の勢いで床に転がり落ち（軽い木琴の落下SEを伴う）、慌てて手で拾い上げて頭に戻すアニメーションを表示する。
+### Req 1: Puppet stage with curtain-up and curtain-down bow (curtain call)
+- **1.1**: WHEN the app starts THE SYSTEM SHALL display a puppet stage with an antique wood-carved frame, crimson velvet curtains, and candle footlights at the front.
+- **1.2**: WHEN the user presses the "Play" button THE SYSTEM SHALL reset any scheduled nodes and timers, resume the `AudioContext`, open the curtains, light the footlights, and start a synchronized four-track looping ensemble.
+- **1.3**: WHEN the user presses the "Stop" button during playback THE SYSTEM SHALL immediately discard scheduled notes and the visual queue, play a curtain call (all puppets bowing together) for about 1.8 seconds, and then close the curtains.
+- **1.4**: WHEN the curtain call plays THE SYSTEM SHALL, if the Skeleton puppet is active, show its skull rolling onto the floor from the force of the bow (with a light xylophone drop sound effect), then the Skeleton hurriedly picking it up and putting it back on its head.
 
-### Req 2: 3スロット共通カスタマイズと直接ツンツン演奏（Mute時対応）
-- **2.1**: WHEN ユーザーが怪物パペットを選択した時 THE SYSTEM SHALL 共通の3スロットUI（Slot A: 音色/波形, Slot B: リズム/フレーズ, Slot C: 表情/奏法、各3種＝全36パーツ）および Mute / Solo ボタンを表示する。
-- **2.2**: WHEN ユーザーがスロットを変更した時 THE SYSTEM SHALL パペットの見た目と音響パターンを即時更新し、変更後の音色でプレビュー音を1音鳴らす。
-- **2.3**: WHEN ユーザーがステージ上のパペットを直接クリック（ツンツン）した時 THE SYSTEM SHALL 再生中・停止中を問わず、その怪物の現在音色で1音（ワンショット）発音し、対応する演奏モーションを発火させる。
-- **2.4**: WHILE パペットが Mute（居眠り）状態の時に直接クリック（ツンツン）された時 THE SYSTEM SHALL ループ上のMute状態は維持したまま、その瞬間だけパペットが「ハッ！」と目を開けて1音だけ寝言のように鳴き、減衰後に再び居眠り姿へ戻る挙動とする。
+### Req 2: Shared 3-slot customization and direct poking (including while muted)
+- **2.1**: WHEN the user selects a monster puppet THE SYSTEM SHALL show a common 3-slot UI (Slot A: timbre/waveform, Slot B: rhythm/phrase, Slot C: expression/playing style, 3 options each, 36 parts in total) together with Mute / Solo buttons.
+- **2.2**: WHEN the user changes a slot THE SYSTEM SHALL immediately update the puppet's appearance and sound pattern, and play one preview note with the new timbre.
+- **2.3**: WHEN the user directly clicks ("pokes") a puppet on stage THE SYSTEM SHALL play one one-shot note with that monster's current timbre and trigger the matching performance motion, whether the song is playing or stopped.
+- **2.4**: WHILE a puppet is Muted (dozing) and the user pokes it THE SYSTEM SHALL keep the loop's Mute state, have the puppet snap awake ("Huh!") and play exactly one note like a sleep-talk, and return to the dozing pose after the note decays.
 
-### Req 3: 出力時刻同期モーションと居眠り待機
-- **3.1**: WHILE 発音中 THE SYSTEM SHALL `getOutputTimestamp()` に基づく音声出力時刻からの経過時間 $\Delta t$ により指数減衰値 `energy = Math.exp(-dt / tau)` を算出し、各パペットの固有モーションを駆動する：
-  - **🎃 かぼちゃ（Lead）**: 発音時に口がパクパク開閉し、内部のロウソク光量が脈動する。
-  - **💀 骸骨（Drums/Marimba）**: キック音で頭が頷き、木琴音で両腕が音程に応じた高さの自分の肋骨（1〜4段目）を叩く。
-  - **🧪 大釜（Bass）**: 低音発音時に鍋底から毒泡が発生し、液面で弾けて湯気が立つ。
-  - **👻 幽霊（Pad/Choir）**: 和音発音中に体が縦横に伸縮（Squash & Stretch）してハモる。
-- **3.2**: WHILE トラックが Mute（または他トラックのSoloによる消音）状態かつ非発音の時 THE SYSTEM SHALL 該当パペットを「居眠り姿（目を閉じてZzz表示、消灯、体育座り等）」に変化させる。
+### Req 3: Output-time-synchronized motion and dozing idle
+- **3.1**: WHILE a note is sounding THE SYSTEM SHALL compute an exponential decay `energy = Math.exp(-dt / tau)` from the elapsed time Δt since the audio output time given by `getOutputTimestamp()`, and drive each puppet's own motion with it:
+  - **🎃 Pumpkin (Lead)**: the mouth opens and closes on each note and the candle inside pulses.
+  - **💀 Skeleton (Drums/Marimba)**: the head nods on kicks, and on marimba notes both arms strike the puppet's own rib (rows 1 to 4) at a height that matches the pitch.
+  - **🧪 Cauldron (Bass)**: poison bubbles rise from the bottom of the pot on low notes, pop at the surface, and release steam.
+  - **👻 Ghost (Pad/Choir)**: the body squashes and stretches vertically and horizontally while chords sound, as if harmonizing.
+- **3.2**: WHILE a track is Muted (or silenced by another track's Solo) and not sounding THE SYSTEM SHALL change that puppet to a dozing pose (eyes closed, Zzz shown, light off, hugging its knees, and so on).
 
-### Req 4: 公演ポスター（PNG）＆シームレスループ音源（WAV）書き出し
-- **4.1**: WHEN パーツの組み合わせが決まった時 THE SYSTEM SHALL スロットの組み合わせから「怪物楽団名（Band Name）」と「演目名（Song Title / Genre）」を自動生成して表示する。
-- **4.2**: WHEN ユーザーが「Save Poster (PNG)」を押した時 THE SYSTEM SHALL パペット編成・楽団名・演目名を描画した絵本風公演ポスターCanvas画像を `.png` としてダウンロードさせる。
-- **4.3**: WHEN ユーザーが「Export Loop (WAV)」を押した時 THE SYSTEM SHALL `OfflineAudioContext` で2周分（64ステップ）をレンダリングし、ディレイ残響が自然に乗った2周目（後半32ステップ）を切り出してシームレスループ `.wav` ファイルとしてダウンロードさせる。
+### Req 4: Performance poster (PNG) and seamless loop audio (WAV) export
+- **4.1**: WHEN the combination of parts is decided THE SYSTEM SHALL automatically generate and display a monster band name ("Band Name") and a program title ("Song Title / Genre") from the slot combination.
+- **4.2**: WHEN the user presses "Save Poster (PNG)" THE SYSTEM SHALL download a storybook-style performance poster, drawn on a Canvas with the puppet lineup, band name, and song title, as a `.png` file.
+- **4.3**: WHEN the user presses "Export Loop (WAV)" THE SYSTEM SHALL render two loops (64 steps) with an `OfflineAudioContext`, cut out the second loop (the last 32 steps) in which the delay reverb has naturally built up, and download it as a seamless-loop `.wav` file.

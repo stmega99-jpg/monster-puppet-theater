@@ -4,14 +4,14 @@ import { createPuppetElement } from './puppets.js';
 
 const $ = (id) => document.getElementById(id);
 
-// ---- 状態（Task 2 以降が参照する。正本は tracks 配列）------------------------
+// ---- State (read from Task 2 onward; the tracks array is the source of truth) ----
 const tracks = PUPPETS.map((p) => ({ id: p.id, slots: [0, 0, 0], mute: false, solo: false }));
 let selected = 0;
 
 const stage = new Stage($('proscenium'));
 export { stage, tracks };
 
-// ---- ステージ: フットライト（ロウソク）とパペットを生成 -----------------------
+// ---- Stage: build the candle footlights and the puppets ----
 const footlights = $('footlights');
 for (let i = 0; i < 9; i++) {
   const c = document.createElement('div');
@@ -29,7 +29,7 @@ PUPPETS.forEach((p) => {
   puppetEls.set(p.id, el);
 });
 
-// ---- 開演・閉演 --------------------------------------------------------------
+// ---- Play / Stop ----
 const playBtn = $('playBtn');
 const stopBtn = $('stopBtn');
 
@@ -40,10 +40,10 @@ stage.addEventListener('stagechange', (e) => {
   const { state } = e.detail;
   playBtn.disabled = state === 'open';
   stopBtn.disabled = state !== 'open';
-  $('curtainHint').textContent = state === 'closed' ? '開演をお待ちください' : '';
+  $('curtainHint').textContent = state === 'closed' ? 'The show will begin shortly' : '';
 });
 
-// ---- パペット選択タブ + 3スロットUI -----------------------------------------
+// ---- Puppet tabs + 3-slot UI ----
 const tabs = $('puppetTabs');
 const panel = $('slotPanel');
 
@@ -96,7 +96,7 @@ panel.addEventListener('click', (e) => {
   if (opt) {
     t.slots[+opt.dataset.slot] = +opt.dataset.opt;
     renderPanel();
-    // 変更後の音色プレビュー（Req 2.2）は Task 2 / 3 で接続する。
+    // The preview note after a slot change (Req 2.2) is wired up in Tasks 2 and 3.
     return;
   }
   const tg = e.target.closest('.toggle');
@@ -107,7 +107,7 @@ panel.addEventListener('click', (e) => {
   }
 });
 
-// Mute / 他トラックの Solo で消音中のパペットは居眠り姿にする（Req 3.2 の見た目のみ）。
+// Puppets silenced by Mute or by another track's Solo show the dozing pose (visual part of Req 3.2 only).
 function syncSleep() {
   const anySolo = tracks.some((t) => t.solo);
   tracks.forEach((t) => {

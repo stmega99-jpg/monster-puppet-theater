@@ -1,28 +1,28 @@
 # Implementation Tasks
 
-## Phase 1: アンティーク人形劇ステージ基盤 ＋ 🎃かぼちゃMVP ＋ 保存機能
+## Phase 1: Antique puppet stage foundation + 🎃 Pumpkin MVP + export features
 
-- [ ] 1. アンティーク木彫り劇場UIと開閉幕・お辞儀（カーテンコール）演出の構築 (_Requirements: 1.1, 1.2, 1.3_)
-  - 絵本・木彫りパレット（`#1A1412`, `#4A3228`, `#6B1D2F`, `#F2E6D0`）を適用した額縁ステージ、ベルベットカーテン、ロウソクのフットライト、3スロットUIを構築する。
-- [ ] 2. 和声マップ付き4トラック共通Web Audioエンジンと厳密な停止/同期機構の実装 (_Requirements: 1.2, 1.3, 3.1_)
-  - `Cm -> Ab -> Fm -> G7`（4音chord配列・C2〜Ab3ベース帯域）の和声マップ、全トラック統一スウィング、マスターディレイ＋コンプレッサー、`activeNodes` 一括破棄、`getOutputTimestamp()` 基準の `visualQueue`（スウィング加算済み時刻共有）同期を実装する。
-- [ ] 3. 🎃 かぼちゃパペット（Lead Synth）の3スロット9パーツ描画・口パク＆ツンツン連動 (_Requirements: 2.1, 2.2, 2.3, 2.4, 3.1, 3.2_)
-  - 目（三日月/ボタン/星）・鼻（ポルカ/シャッフル/タンゴ）・口（ギザ歯/丸口/八重歯）の描画と音色変化、口パク＆ロウソク発光、消灯居眠り、Mute時も一瞬起きて鳴くツンツン機能、閉演時のお辞儀を実装する。
-- [ ] 4. 楽団名ジェネレーター＆絵本風公演ポスター（PNG）／シームレスループWAV書き出しの実装 (_Requirements: 4.1, 4.2, 4.3_)
-  - 二つ名生成、羊皮紙ポスター風PNG保存、`OfflineAudioContext` 2周レンダリング・後半切り出しによるシームレス `.wav` 出力を実装する。
+- [ ] 1. Build the antique wood-carved theater UI with curtain open/close and the bow (curtain call) animation (_Requirements: 1.1, 1.2, 1.3_)
+  - Build the framed stage, velvet curtains, candle footlights, and the 3-slot UI using the storybook/wood palette (`#1A1412`, `#4A3228`, `#6B1D2F`, `#F2E6D0`).
+- [ ] 2. Implement the shared four-track Web Audio engine with a harmonic map and strict stop/sync handling (_Requirements: 1.2, 1.3, 3.1_)
+  - Implement the harmonic map `Cm -> Ab -> Fm -> G7` (4-note chord arrays, bass in the C2 to Ab3 range), ensemble-wide unified swing, master delay + compressor, bulk disposal of `activeNodes`, and `visualQueue` synchronization based on `getOutputTimestamp()` (sharing the swing-adjusted time).
+- [ ] 3. 🎃 Pumpkin puppet (Lead Synth): draw the 3 slots x 3 parts (9 parts), mouth-flap and poke-triggered motion (_Requirements: 2.1, 2.2, 2.3, 2.4, 3.1, 3.2_)
+  - Draw eyes (crescent/button/star), noses (Polka/Shuffle/Tango), and mouths (jagged/round/fanged), with matching timbre changes. Implement mouth flapping and candle glow, the lights-out dozing pose, poking that briefly wakes the puppet to play one note even while muted, and the bow at curtain down.
+- [ ] 4. Implement the band name generator, the storybook performance poster (PNG) export, and the seamless loop WAV export (_Requirements: 4.1, 4.2, 4.3_)
+  - Implement alias generation, saving a parchment-style poster as PNG, and seamless `.wav` output by rendering two loops in an `OfflineAudioContext` and cutting out the second half.
 
-## Phase 2: 怪物楽団メンバー（💀・🧪・👻）の順次加入
+## Phase 2: Monster band members (💀, 🧪, 👻) join one by one
 
-- [ ] 5. 💀 骸骨ドラマー（Bone Marimba）全9パーツと「閉演お辞儀の頭ポロリ演出」の追加 (_Requirements: 1.4, 2.1, 2.3, 3.1, 3.2_)
-  - 頭（シルクハット/ぜんまいネジ/王冠）・肋骨（4つ箱/真鍮/蜘蛛の巣）・バチ（骨/銀スプーン/小枝）の実装、肋骨1〜4段目（`M0..M3` = `chord[0..3]`）タッピング、体育座り居眠り、および**閉演お辞儀で頭蓋骨がコロンと落ちて慌てて拾う演出**を追加する。
-- [ ] 6. 🧪 魔女の大釜ベーシスト（Acid Bubble Bass）全9パーツの追加 (_Requirements: 2.1, 2.3, 3.1, 3.2_)
-  - 釜（猫足鉄釜/真鍮ツギハギ/陶器）・具材（毒キノコ/カエル/目玉）・炎（ろうそく/狐火/茨薪）の実装、発音時の毒泡パーティクル＆弾け演出、とろ火居眠り、お辞儀を追加する。
-- [ ] 7. 👻 幽霊コーラス（Theremin Choir Pad）全9パーツの追加と4体合奏バランス調整 (_Requirements: 2.1, 2.3, 3.1, 3.2_)
-  - 帽子（ナイトキャップ/紙王冠/ベール）・顔（丸口/糸目/涙目）・持ち物（角燈/懐中時計/羽根ペン）の実装、もちもち伸縮、Zzz居眠り、お辞儀を追加し、4体入り公演ポスターを完成させる。
+- [ ] 5. Add all 9 parts of the 💀 Skeleton drummer (Bone Marimba) and the "skull tumbles off at the curtain-call bow" gag (_Requirements: 1.4, 2.1, 2.3, 3.1, 3.2_)
+  - Implement the head (top hat/wind-up key/tin crown), ribs (four boxes/brass joints/cobweb), and mallet (bone/silver spoon/twig), rib rows 1 to 4 tapping (`M0..M3` = `chord[0..3]`), the hugging-knees dozing pose, and **the curtain-call gag where the skull rolls off and the Skeleton scrambles to pick it up**.
+- [ ] 6. Add all 9 parts of the 🧪 Witch's Cauldron bassist (Acid Bubble Bass) (_Requirements: 2.1, 2.3, 3.1, 3.2_)
+  - Implement the pot (cat-footed iron/patchwork brass/ceramic), ingredient (poison mushroom/frog/eyeball), and flame (candles/foxfire/bramble logs), the poison bubble particles and pop effects on notes, the simmering dozing pose, and the bow.
+- [ ] 7. Add all 9 parts of the 👻 Ghost choir (Theremin Choir Pad) and balance the four-piece ensemble (_Requirements: 2.1, 2.3, 3.1, 3.2_)
+  - Implement the hat (nightcap/paper crown/veil), face (round mouth/slit eyes/teary eyes), and item (lantern/pocket watch/quill), the soft squash and stretch, the Zzz dozing pose, and the bow. Then finish the poster so it shows all four members.
 
-## Phase 3: 統合動作テスト・エッジケース検証
+## Phase 3: Integration testing and edge-case verification
 
-- [ ] 8. 連続再生・停止連打・ミュート挙動・WAVループ境界の検証テスト (_Requirements: 1.2, 1.3, 1.4, 2.4, 4.3_)
-  - **8.1 再生/停止/お辞儀の割り込み検証**: PlayとStopを高速連打した際、二重演奏や残留音が起きず、カーテンコール（頭ポロリ）の途中でPlayを押しても即座に正常再開することを確認する。
-  - **8.2 ミュート＆ツンツン検証**: Mute中のパペットがループ再生で消音・居眠り状態を保ち、直接クリック（ツンツン）した時だけ一瞬目を開けて1音鳴いた後に居眠りへ戻ることを確認する。
-  - **8.3 シームレスWAVループ境界検証**: 出力されたWAVのサンプル数が正確に1ループ分（32ステップ分）であり、先頭にディレイ残響が繋がっていてループ再生時にブツ切れや無音ギャップが生じないことを確認する。
+- [ ] 8. Verify repeated play, rapid stop, mute behavior, and the WAV loop boundary (_Requirements: 1.2, 1.3, 1.4, 2.4, 4.3_)
+  - **8.1 Play/Stop/bow interruption**: Confirm that mashing Play and Stop causes no double playback or lingering sound, and that pressing Play in the middle of the curtain call (skull tumble) restarts normally and immediately.
+  - **8.2 Mute and poke**: Confirm that a muted puppet stays silent and dozing during loop playback, and that only a direct click ("poke") makes it open its eyes briefly, play one note, and return to dozing.
+  - **8.3 Seamless WAV loop boundary**: Confirm that the exported WAV has exactly one loop's worth of samples (32 steps), that the delay reverb carries over into the start, and that looping it produces no cut-offs or silent gaps.
