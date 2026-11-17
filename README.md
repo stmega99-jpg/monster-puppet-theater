@@ -16,4 +16,5 @@ python3 -m http.server 8000   # then open http://localhost:8000
 - [x] Task 3: pumpkin puppet (9 face parts, timbres, mouth and candle motion, poke, dozing pose)
 - [x] Task 4: band name generator, storybook poster (PNG) and seamless loop recording (WAV)
 - [x] Task 5: skeleton drummer (9 parts, Bone Marimba, rib tapping, dozing pose) and the skull tumble gag at the curtain call
-- [ ] Task 6 and later: see `.kiro/specs/monster-ensemble/tasks.md`
+- [x] Task 6: witch's cauldron (9 parts, Acid Bubble Bass, poison bubbles that pop, simmering dozing pose, bow)
+- [ ] Task 7 and later: see `.kiro/specs/monster-ensemble/tasks.md`

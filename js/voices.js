@@ -1,8 +1,8 @@
 // Web Audio voices for the four tracks. Every sound is synthesized; no audio files are loaded.
 //
-// The pumpkin has all of its Slot A and Slot C options (Task 3). The skeleton, cauldron and ghost
-// still use one default voice each (Slot A / Slot C option 0); their remaining timbre options from
-// design.md section 2 are added with each puppet in Tasks 5, 6 and 7.
+// The pumpkin (Task 3), the skeleton (Task 5) and the cauldron (Task 6) have all of their timbre
+// options from design.md section 2. The ghost still uses one default voice (Slot A / Slot C
+// option 0); its remaining options are added in Task 7.
 //
 // A voice function schedules its nodes and returns { nodes, sources }:
 //   nodes   - every node it created (the engine disconnects them on stop / when finished)
@@ -241,22 +241,67 @@ export function skeletonRib(ctx, out, when, freq, mallet = 0, { gain = 1, decay 
   return { nodes, sources };
 }
 
-// ---- 🧪 Cauldron: acid bubble bass (Cat-Footed Iron Cauldron + Beeswax Candle Bundle) ----
-// sawtooth, LPF 280 Hz, Q 3.0, pluck decay 0.22 s, gain 0.28.
-export function cauldronVoice(ctx, out, when, freq) {
-  const osc = ctx.createOscillator();
-  osc.type = 'sawtooth';
-  osc.frequency.value = freq;
+// ---- 🧪 Cauldron: acid bubble bass (design.md section 2, gain 0.28) ----------------
+// Slot A (pot) picks the waveform and filter, Slot C (flame) the envelope.
+//   pot 0 Cat-Footed Iron Cauldron: sawtooth, LPF 280 Hz, Q 3.0
+//   pot 1 Patchwork Brass Cauldron: square, envelope LPF 160 -> 850 Hz, Q 8.0 (the acid squelch)
+//   pot 2 Cracked Ceramic Cauldron: triangle + sub, LPF 400 Hz, Q 2.0
+//   flame 0 Beeswax Candle Bundle: pluck, decay 0.22 s
+//   flame 1 Foxfire Lantern: glide (the pitch slides up into the note), decay 0.42 s
+//   flame 2 Crackling Bramble Logs: punch accent (a hard filter snap and a click on the attack)
+export const CAULDRON_POTS = [
+  { type: 'sawtooth', cutoff: 280, q: 3.0, level: 1 },
+  { type: 'square', cutoff: 160, q: 8.0, level: 0.55, sweepTo: 850 },
+  { type: 'triangle', cutoff: 400, q: 2.0, level: 0.8, sub: 0.35 },
+];
+export const CAULDRON_FLAMES = [
+  { decay: 0.22, attack: 0.005 },
+  { decay: 0.42, attack: 0.02, glideFrom: 0.89, glideTime: 0.07 },
+  { decay: 0.2, attack: 0.002, punch: true },
+];
+const CAULDRON_GAIN = 0.28;
+
+export function cauldronVoice(ctx, out, when, freq, { pot = 0, flame = 0 } = {}) {
+  const P = CAULDRON_POTS[pot] ?? CAULDRON_POTS[0];
+  const F = CAULDRON_FLAMES[flame] ?? CAULDRON_FLAMES[0];
+  const nodes = [];
+  const sources = [];
+
   const lpf = ctx.createBiquadFilter();
   lpf.type = 'lowpass';
-  lpf.frequency.value = 280;
-  lpf.Q.value = 3.0;
+  lpf.Q.value = P.q;
   const amp = ctx.createGain();
-  osc.connect(lpf).connect(amp).connect(out);
-  const end = percussive(amp.gain, when, 0.28, 0.005, 0.22);
-  osc.start(when);
-  osc.stop(end + 0.03);
-  return { nodes: [osc, lpf, amp], sources: [osc] };
+  lpf.connect(amp).connect(out);
+  nodes.push(lpf, amp);
+
+  const osc = (type, f, level) => {
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.value = f;
+    if (F.glideFrom) pitchSweep(o.frequency, when, f * F.glideFrom, f, F.glideTime);
+    const g = ctx.createGain();
+    g.gain.value = level;
+    o.connect(g).connect(lpf);
+    nodes.push(o, g);
+    sources.push(o);
+  };
+  osc(P.type, freq, P.level);
+  if (P.sub) osc('sine', freq / 2, P.sub);
+
+  // Filter: the pot's own cutoff, shaped by the flame (squelch for the brass pot, snap for the punch).
+  const end = percussive(amp.gain, when, CAULDRON_GAIN * (F.punch ? 1.05 : 1), F.attack, F.decay);
+  lpf.frequency.value = P.cutoff;
+  if (P.sweepTo) {
+    lpf.frequency.setValueAtTime(P.cutoff, when);
+    lpf.frequency.exponentialRampToValueAtTime(P.sweepTo, when + 0.06);
+    lpf.frequency.exponentialRampToValueAtTime(P.cutoff * 1.2, end);
+  } else if (F.punch) {
+    lpf.frequency.setValueAtTime(P.cutoff * 3, when);
+    lpf.frequency.exponentialRampToValueAtTime(P.cutoff, when + 0.07);
+  }
+  if (F.punch) noiseBurst(ctx, amp, when, { filter: 'lowpass', freq: 900, q: 0.7, peak: 0.3, attack: 0.001, decay: 0.03 }, nodes, sources);
+  sources.forEach((s) => { if (s instanceof OscillatorNode) { s.start(when); s.stop(end + 0.03); } });
+  return { nodes, sources };
 }
 
 // ---- 👻 Ghost: theremin choir pad (Striped Nightcap + Small Brass Lantern) ------

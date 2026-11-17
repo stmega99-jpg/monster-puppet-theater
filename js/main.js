@@ -6,6 +6,7 @@ import { applyPumpkinParts } from './pumpkin-art.js';
 import {
   applySkeletonParts, setArmVars, strikePose, gagPose, applyGagPose, clearGagPose, GAG_HITS, GAG_PLACE,
 } from './skeleton-art.js';
+import { applyCauldronParts, BubbleField } from './cauldron-art.js';
 import { isAudible } from './music.js';
 import { generateBandInfo, fileStem } from './band.js';
 import { renderPoster, posterToBlob } from './poster.js';
@@ -47,6 +48,7 @@ PUPPETS.forEach((p) => {
 });
 applyPumpkinParts(puppetEls.get('pumpkin'), tracks[0].slots);
 applySkeletonParts(puppetEls.get('skeleton'), tracks[1].slots);
+applyCauldronParts(puppetEls.get('cauldron'), tracks[2].slots);
 
 // ---- Poking and previews (Req 2.2, 2.3, 2.4) ----
 // A muted puppet snaps awake for the length of its one note, then dozes off again.
@@ -81,6 +83,8 @@ function endGag() {
   clearGagPose(skeletonEl);
 }
 
+const bubbles = new BubbleField(puppetEls.get('cauldron').querySelector('.cd-bubbles'));
+
 // ---- Play / Stop ----
 const playBtn = $('playBtn');
 const stopBtn = $('stopBtn');
@@ -110,6 +114,7 @@ function frame() {
   puppetEls.forEach((el, id) => el.style.setProperty('--energy', energy[id].toFixed(3)));
   syncSleep(); // lets a poked puppet fall back asleep once its wake time is over
   updateSkeleton(detail.skeleton);
+  updateCauldron(detail.cauldron);
   requestAnimationFrame(frame);
 }
 
@@ -128,6 +133,13 @@ function updateSkeleton(sk) {
     const flash = Math.max(...sk.arms.map((a) => (a.row === row ? a.energy : 0)));
     el.querySelector(`.sk-flash-${row}`).style.opacity = (flash * 0.9).toFixed(3);
   }
+}
+
+/** Cauldron: every bass note sends poison bubbles up from the bottom of the brew (they pop at the surface). */
+function updateCauldron(cd) {
+  const now = performance.now() / 1000;
+  cd.hits.forEach((hit) => bubbles.spawn(hit.freq, now));
+  bubbles.update(now);
 }
 requestAnimationFrame(frame);
 
@@ -186,6 +198,7 @@ panel.addEventListener('click', (e) => {
     renderPanel();
     if (t.id === 'pumpkin') applyPumpkinParts(puppetEls.get('pumpkin'), t.slots); // new look, instantly
     if (t.id === 'skeleton') applySkeletonParts(puppetEls.get('skeleton'), t.slots);
+    if (t.id === 'cauldron') applyCauldronParts(puppetEls.get('cauldron'), t.slots);
     poke(t.id, +opt.dataset.slot); // Req 2.2: preview one note with the new timbre
     updatePlaybill();
     return;
