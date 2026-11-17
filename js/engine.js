@@ -36,8 +36,9 @@ const STALE_TOLERANCE = 0.02;       // steps later than this are skipped, not pl
  * @param {number} p.stepDur
  * @param {(voice) => void} p.register  called with { nodes, sources } for every voice
  * @param {(event) => void} p.emit      called with the visual event for every note
+ * @param {object} [p.state]            per-run memory (e.g. the pumpkin's previous pitch for portamento)
  */
-export function scheduleStep({ ctx, out, tracks, stepIndex, baseStepTime, stepDur, register, emit }) {
+export function scheduleStep({ ctx, out, tracks, stepIndex, baseStepTime, stepDur, register, emit, state = {} }) {
   const step = stepIndex % STEPS_PER_LOOP;
   const k = step % STEPS_PER_CHORD;
   const chord = CHORD_MAP[Math.floor(step / STEPS_PER_CHORD)];
@@ -55,7 +56,8 @@ export function scheduleStep({ ctx, out, tracks, stepIndex, baseStepTime, stepDu
     switch (track.id) {
       case 'pumpkin':
         freq = chord.scale[ev];
-        voice = pumpkinVoice(ctx, out, scheduledTime, freq);
+        voice = pumpkinVoice(ctx, out, scheduledTime, freq, pumpkinOptions(track, state.pumpkinLast));
+        state.pumpkinLast = freq;
         break;
       case 'skeleton':
         if (ev === 'K') voice = skeletonKick(ctx, out, scheduledTime);
@@ -89,6 +91,14 @@ export function scheduleStep({ ctx, out, tracks, stepIndex, baseStepTime, stepDu
   });
 }
 
+/** Slot A (eyes) = timbre, Slot C (mouth) = playing style. */
+function pumpkinOptions(track, prevFreq = null) {
+  return { timbre: track.slots[0], style: track.slots[2], prevFreq };
+}
+
+// Pitches for pokes and slot previews: a gentle walk through the current chord's scale.
+const POKE_DEGREES = [0, 2, 3, 4, 3, 2];
+
 export class AudioEngine {
   /** @param {Array} tracks live track state from main.js; read on every step, so edits apply immediately */
   constructor(tracks) {
@@ -102,6 +112,8 @@ export class AudioEngine {
     this.startTime = 0;
     this.stepIndex = 0;
     this.stepDur = stepDuration();
+    this.state = {};       // memory shared by scheduleStep calls of one run
+    this.pokeCount = 0;
   }
 
   get running() { return this.timer !== null; }
@@ -124,6 +136,7 @@ export class AudioEngine {
     const ctx = this.ctx;
     this.startTime = ctx.currentTime + START_DELAY;
     this.stepIndex = 0;
+    this.state = {};
     this._tick();
     this.timer = setInterval(() => this._tick(), TICK_MS);
     if (ctx.state !== 'running') await ctx.resume();
@@ -162,6 +175,47 @@ export class AudioEngine {
     });
   }
 
+  /** Keep visualQueue sorted by time, so a poke can never sit behind later look-ahead events. */
+  _enqueue(event) {
+    const q = this.visualQueue;
+    let i = q.length;
+    while (i > 0 && q[i - 1].time > event.time) i--;
+    q.splice(i, 0, event);
+  }
+
+  /** The chord that is sounding now (Cm while stopped). */
+  currentChord() {
+    if (!this.running || !this.ctx) return CHORD_MAP[0];
+    const idx = Math.max(0, Math.floor((this.ctx.currentTime - this.startTime) / this.stepDur));
+    return CHORD_MAP[Math.floor((idx % STEPS_PER_LOOP) / STEPS_PER_CHORD)];
+  }
+
+  /** True for the tracks that can sound a one-shot note (the pumpkin so far). */
+  hasOneShot(trackId) {
+    return trackId === 'pumpkin';
+  }
+
+  /**
+   * Play one note of a track right now, whether or not the loop is running and even if the track is
+   * muted (Req 2.3, 2.4). Used for pokes and for the preview after a slot change (Req 2.2).
+   * Only the pumpkin has a one-shot voice so far. Returns true when a note was scheduled.
+   * Call from a user gesture.
+   */
+  async playOneShot(trackId) {
+    if (!this.hasOneShot(trackId)) return false;
+    const track = this.tracks.find((t) => t.id === trackId);
+    this._ensureContext();
+    if (this.ctx.state !== 'running') await this.ctx.resume();
+    const chord = this.currentChord();
+    const degree = POKE_DEGREES[this.pokeCount++ % POKE_DEGREES.length];
+    const freq = chord.scale[degree];
+    const when = this.ctx.currentTime + 0.02;
+    // Poke notes never glide: there is no previous pitch to slide from.
+    this._register(pumpkinVoice(this.ctx, this.bus.input, when, freq, pumpkinOptions(track, null)));
+    this._enqueue({ trackId, time: when, kind: 'poke', freq, step: null });
+    return true;
+  }
+
   _tick() {
     const { ctx } = this;
     const now = ctx.currentTime;
@@ -176,7 +230,8 @@ export class AudioEngine {
         baseStepTime: at(this.stepIndex),
         stepDur: this.stepDur,
         register: (v) => this._register(v),
-        emit: (e) => this.visualQueue.push(e),
+        emit: (e) => this._enqueue(e),
+        state: this.state,
       });
       this.stepIndex++;
     }

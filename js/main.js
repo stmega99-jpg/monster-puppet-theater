@@ -2,6 +2,8 @@ import { PUPPETS } from './parts.js';
 import { Stage } from './stage.js';
 import { createPuppetElement } from './puppets.js';
 import { AudioEngine } from './engine.js';
+import { applyPumpkinParts } from './pumpkin-art.js';
+import { isAudible } from './music.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -26,10 +28,29 @@ for (let i = 0; i < 9; i++) {
 const puppetEls = new Map();
 PUPPETS.forEach((p) => {
   const el = createPuppetElement(p);
-  el.addEventListener('click', () => selectPuppet(PUPPETS.indexOf(p)));
+  el.addEventListener('click', () => {
+    selectPuppet(PUPPETS.indexOf(p));
+    poke(p.id); // Req 2.3: poking a puppet plays one note, playing or stopped
+  });
+  el.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); }
+  });
   $('puppets').appendChild(el);
   puppetEls.set(p.id, el);
 });
+applyPumpkinParts(puppetEls.get('pumpkin'), tracks[0].slots);
+
+// ---- Poking and previews (Req 2.2, 2.3, 2.4) ----
+// A muted puppet snaps awake for the length of its one note, then dozes off again.
+const WAKE_MS = 750; // the note's energy (tau 0.18 s) has decayed below 2% by then
+const wakeUntil = {};
+
+function poke(trackId) {
+  if (!engine.hasOneShot(trackId)) return;
+  wakeUntil[trackId] = performance.now() + WAKE_MS;
+  syncSleep();
+  engine.playOneShot(trackId).catch((err) => console.error('One-shot failed:', err));
+}
 
 // ---- Play / Stop ----
 const playBtn = $('playBtn');
@@ -54,6 +75,7 @@ stage.addEventListener('stagechange', (e) => {
 function frame() {
   const { energy } = engine.update();
   puppetEls.forEach((el, id) => el.style.setProperty('--energy', energy[id].toFixed(3)));
+  syncSleep(); // lets a poked puppet fall back asleep once its wake time is over
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
@@ -111,7 +133,8 @@ panel.addEventListener('click', (e) => {
   if (opt) {
     t.slots[+opt.dataset.slot] = +opt.dataset.opt;
     renderPanel();
-    // The preview note after a slot change (Req 2.2) is wired up in Tasks 2 and 3.
+    if (t.id === 'pumpkin') applyPumpkinParts(puppetEls.get('pumpkin'), t.slots); // new look, instantly
+    poke(t.id); // Req 2.2: preview one note with the new timbre
     return;
   }
   const tg = e.target.closest('.toggle');
@@ -122,12 +145,14 @@ panel.addEventListener('click', (e) => {
   }
 });
 
-// Puppets silenced by Mute or by another track's Solo show the dozing pose (visual part of Req 3.2 only).
+// Puppets silenced by Mute or by another track's Solo show the dozing pose (Req 3.2),
+// except while a poke has them awake (Req 2.4).
 function syncSleep() {
-  const anySolo = tracks.some((t) => t.solo);
+  const now = performance.now();
   tracks.forEach((t) => {
-    const silent = t.mute || (anySolo && !t.solo);
-    puppetEls.get(t.id).classList.toggle('is-asleep', silent);
+    const silent = !isAudible(t, tracks);
+    const awakeByPoke = now < (wakeUntil[t.id] ?? 0);
+    puppetEls.get(t.id).classList.toggle('is-asleep', silent && !awakeByPoke);
   });
 }
 

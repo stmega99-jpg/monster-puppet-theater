@@ -1,16 +1,13 @@
-// Placeholder bodies (silhouettes) for Task 1. Tasks 3, 5, 6 and 7 replace them with the real puppet art.
+// The pumpkin has its real art (pumpkin-art.js, Task 3). The skeleton, cauldron and ghost are still
+// placeholder silhouettes; Tasks 5, 6 and 7 replace them with the real puppet art.
 // The hemp control strings (rgba(212,195,163,0.35)) and the wooden control bar are shared by every puppet.
+
+import { pumpkinSVG } from './pumpkin-art.js';
 
 const STRING = 'rgba(212, 195, 163, 0.35)';
 const INK = '#2C1E18';
 
 const bodies = {
-  pumpkin: `
-    <ellipse cx="70" cy="150" rx="46" ry="40" fill="#D97236" stroke="${INK}" stroke-width="2.5"/>
-    <path d="M70 112 C56 130 56 170 70 188 M70 112 C84 130 84 170 70 188" fill="none" stroke="#B85A25" stroke-width="2"/>
-    <path d="M62 112 q8 -16 16 0" fill="#5B4A2A" stroke="${INK}" stroke-width="2"/>
-    <g class="eyes"><path d="M50 140 q8 -8 16 0 q-8 3 -16 0z M74 140 q8 -8 16 0 q-8 3 -16 0z" fill="#F7C873" stroke="${INK}" stroke-width="1.5"/></g>
-    <path d="M52 162 q18 14 36 0" fill="none" stroke="${INK}" stroke-width="2.5" stroke-linecap="round"/>`,
   skeleton: `
     <rect x="42" y="112" width="56" height="44" rx="20" fill="#E8DCC4" stroke="${INK}" stroke-width="2.5"/>
     <circle cx="58" cy="130" r="6" fill="${INK}"/><circle cx="82" cy="130" r="6" fill="${INK}"/>
@@ -38,6 +35,13 @@ export function createPuppetElement(puppet) {
   el.className = `puppet puppet--${puppet.id}`;
   el.dataset.puppet = puppet.id;
   el.dataset.name = `${puppet.icon} ${puppet.name}`;
+  if (puppet.id === 'pumpkin') {
+    el.innerHTML = pumpkinSVG(puppet.name);
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', `Poke the ${puppet.name}`);
+    return el;
+  }
   el.innerHTML = `
     <svg viewBox="0 0 140 240" role="img" aria-label="${puppet.name}">
       <g stroke="${STRING}" stroke-width="1.4" fill="none">
