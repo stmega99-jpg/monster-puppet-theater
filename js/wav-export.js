@@ -35,6 +35,7 @@ export async function renderLoops(tracks, { loops = 2, sampleRate = EXPORT_SAMPL
     scheduleStep({
       ctx,
       out: bus.input,
+      trims: bus.trims,
       tracks,
       stepIndex: i,
       baseStepTime: i * stepDur + GRID_NUDGE,

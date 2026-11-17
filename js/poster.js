@@ -406,8 +406,9 @@ function drawStagePicture(ctx, px, py, pw, ph, images, rng) {
   const drawH = 452;
   const drawW = (drawH * PUPPET_IMAGE_ASPECT.width) / PUPPET_IMAGE_ASPECT.height;
   const sway = [-1.6, 1.2, -0.9, 1.8];
+  const nudge = [8, 0, 0, -14];     // the outer puppets move in a little so a held item is not hidden by a curtain
   images.forEach(({ img, name }, i) => {
-    const cx = usableL + slotW * (i + 0.5);
+    const cx = usableL + slotW * (i + 0.5) + (nudge[i] ?? 0);
     ctx.save();
     ctx.translate(cx, 12);
     ctx.rotate((sway[i % sway.length] * Math.PI) / 180);

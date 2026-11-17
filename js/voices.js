@@ -1,8 +1,6 @@
 // Web Audio voices for the four tracks. Every sound is synthesized; no audio files are loaded.
 //
-// The pumpkin (Task 3), the skeleton (Task 5) and the cauldron (Task 6) have all of their timbre
-// options from design.md section 2. The ghost still uses one default voice (Slot A / Slot C
-// option 0); its remaining options are added in Task 7.
+// All four puppets have every timbre option from design.md section 2 (Tasks 3, 5, 6 and 7).
 //
 // A voice function schedules its nodes and returns { nodes, sources }:
 //   nodes   - every node it created (the engine disconnects them on stop / when finished)
@@ -304,39 +302,98 @@ export function cauldronVoice(ctx, out, when, freq, { pot = 0, flame = 0 } = {})
   return { nodes, sources };
 }
 
-// ---- 👻 Ghost: theremin choir pad (Striped Nightcap + Small Brass Lantern) ------
-// Slightly detuned sine pairs, slow attack, 4.5 Hz tremolo, gain 0.15 in total.
-export function ghostVoice(ctx, out, when, freqs, duration, level = 1) {
+// ---- 👻 Ghost: theremin choir pad (design.md section 2, gain 0.15) -----------------
+// Slot A (hat) picks the voice, Slot C (item) the modulation. Slot B (face) is the voicing; it only
+// changes which notes are played (music.js), not the sound itself.
+//   hat 0 Striped Nightcap: Theremin Choir, slightly detuned sine pairs
+//   hat 1 Storybook Paper Crown: Reed Organ, triangle + sawtooth through a 1200 Hz low-pass
+//   hat 2 Old Lace Veil: Glass Pad, a harmonic chorus (the first four harmonics, each doubled and detuned)
+//   item 0 Small Brass Lantern: tremolo 4.5 Hz
+//   item 1 Chained Pocket Watch: pitch vibrato 6.0 Hz, +-15 cents
+//   item 2 Quill and Sheet Music: octave shimmer (an octave-up layer that swells and fades)
+// `trim` evens out the loudness of the voices and of the items (measured over all 27 combinations);
+// it is not part of the design table. A held chord is scaled by the caller (engine.js) so it is as loud as a single note.
+export const GHOST_VOICES = [
+  { trim: 0.82, layers: [{ type: 'sine', mult: 1, level: 1, cents: [-4, 4] }] },
+  { trim: 0.93, lpf: 1200, layers: [{ type: 'triangle', mult: 1, level: 1, cents: [-3, 3] }, { type: 'sawtooth', mult: 1, level: 0.4, cents: [-3, 3] }] },
+  { trim: 1.29, layers: [1, 2, 3, 4].map((h) => ({ type: 'sine', mult: h, level: 1 / h ** 1.2, cents: [-7, 7] })) },
+];
+export const GHOST_ITEMS = [
+  { kind: 'tremolo', rate: 4.5, depth: 0.15, trim: 1.17 },
+  { kind: 'vibrato', rate: 6.0, cents: 15, trim: 1 },
+  { kind: 'shimmer', rate: 3.4, trim: 0.8 },
+];
+const GHOST_GAIN = 0.15;
+
+export function ghostVoice(ctx, out, when, freqs, duration, level = 1, { voice = 0, item = 0 } = {}) {
+  const V = GHOST_VOICES[voice] ?? GHOST_VOICES[0];
+  const I = GHOST_ITEMS[item] ?? GHOST_ITEMS[0];
+  const nodes = [];
+  const sources = [];
+
   const amp = ctx.createGain();
   const tremolo = ctx.createGain();     // tremolo depth is applied on this gain
-  tremolo.gain.value = 0.85;
+  tremolo.gain.value = I.kind === 'tremolo' ? 1 - I.depth : 1;
+  amp.connect(tremolo).connect(out);
+  nodes.push(amp, tremolo);
+  let mix = amp;
+  if (V.lpf) {
+    const lpf = ctx.createBiquadFilter();
+    lpf.type = 'lowpass';
+    lpf.frequency.value = V.lpf;
+    lpf.Q.value = 0.7;
+    lpf.connect(amp);
+    nodes.push(lpf);
+    mix = lpf;
+  }
+
   const lfo = ctx.createOscillator();
   lfo.type = 'sine';
-  lfo.frequency.value = 4.5;
-  const lfoDepth = ctx.createGain();
-  lfoDepth.gain.value = 0.15;
-  lfo.connect(lfoDepth).connect(tremolo.gain);
-  amp.connect(tremolo).connect(out);
+  lfo.frequency.value = I.rate;
+  nodes.push(lfo);
+  sources.push(lfo);
+  if (I.kind === 'tremolo') {
+    const depth = ctx.createGain();
+    depth.gain.value = I.depth;
+    lfo.connect(depth).connect(tremolo.gain);
+    nodes.push(depth);
+  }
 
-  const nodes = [amp, tremolo, lfo, lfoDepth];
-  const sources = [lfo];
-  const perOsc = (0.15 * level) / (freqs.length * 2);
+  const weight = V.layers.reduce((sum, l) => sum + l.level * l.cents.length, 0);
+  const unit = (GHOST_GAIN * level * V.trim * I.trim) / (freqs.length * weight);
+  const addOsc = (type, f, cents, gainValue) => {
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = f;
+    osc.detune.value = cents;
+    const g = ctx.createGain();
+    g.gain.value = gainValue;
+    osc.connect(g).connect(mix);
+    if (I.kind === 'vibrato') {
+      const vib = ctx.createGain();
+      vib.gain.value = I.cents;
+      lfo.connect(vib).connect(osc.detune);
+      nodes.push(vib);
+    }
+    osc.start(when);
+    nodes.push(osc, g);
+    sources.push(osc);
+    return g;
+  };
   freqs.forEach((f) => {
-    [-4, 4].forEach((cents) => {
-      const osc = ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = f;
-      osc.detune.value = cents;
-      const g = ctx.createGain();
-      g.gain.value = perOsc;
-      osc.connect(g).connect(amp);
-      osc.start(when);
-      nodes.push(osc, g);
-      sources.push(osc);
-    });
+    V.layers.forEach((l) => l.cents.forEach((c) => {
+      addOsc(l.type, f * l.mult, c, unit * l.level);
+      if (I.kind === 'shimmer') { // the octave layer breathes in and out
+        const g = addOsc('sine', f * l.mult * 2, c, unit * l.level * 0.45);
+        const swell = ctx.createGain();
+        swell.gain.value = unit * l.level * 0.4;
+        lfo.connect(swell).connect(g.gain);
+        nodes.push(swell);
+      }
+    }));
   });
 
-  const attack = Math.min(0.12, duration / 2);
+  const attack = Math.min(voice === 2 ? 0.18 : 0.12, duration / 2);
   const release = 0.2;
   amp.gain.value = FLOOR;
   amp.gain.setValueAtTime(FLOOR, when);
@@ -345,6 +402,6 @@ export function ghostVoice(ctx, out, when, freqs, duration, level = 1) {
   amp.gain.linearRampToValueAtTime(FLOOR, when + duration + release);
   const end = when + duration + release + 0.03;
   lfo.start(when);
-  sources.forEach((s) => s.stop(end));
+  sources.forEach((src) => src.stop(end));
   return { nodes, sources };
 }

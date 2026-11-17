@@ -1,11 +1,11 @@
 // Master bus shared by the realtime engine and (later) the offline WAV render.
-//   voices -> input -+-> compressor -> destination
+//   voices -> trim (one per track) -> input -+-> compressor -> destination
 //                    +-> wet gain -> stereo delay (L/R, self-feedback) -> compressor
 //
 // StereoDelay: time = (60 / bpm) * 0.75, feedback 0.22, wet 0.18 (design.md section 5).
 // The right line is 12 ms longer than the left line to widen the image.
 
-import { BPM } from './music.js';
+import { BPM, TRACK_IDS, TRACK_TRIM } from './music.js';
 
 export function createMasterBus(ctx, destination = ctx.destination, bpm = BPM) {
   const input = ctx.createGain();
@@ -38,15 +38,24 @@ export function createMasterBus(ctx, destination = ctx.destination, bpm = BPM) {
     return { delay, fb };
   });
 
+  // One trim per track, the ensemble balance (TRACK_TRIM in music.js). Voices connect to their own trim.
+  const trims = Object.fromEntries(TRACK_IDS.map((id) => {
+    const trim = ctx.createGain();
+    trim.gain.value = TRACK_TRIM[id];
+    trim.connect(input);
+    return [id, trim];
+  }));
+
   input.connect(compressor);
   input.connect(wetGain);
   merger.connect(compressor);
   compressor.connect(destination);
 
-  const nodes = [input, compressor, wetGain, merger, ...lines.flatMap((l) => [l.delay, l.fb])];
+  const nodes = [input, ...Object.values(trims), compressor, wetGain, merger, ...lines.flatMap((l) => [l.delay, l.fb])];
 
   return {
     input,
+    trims,
     output: compressor,
     /** Disconnect everything, which also flushes the delay lines (no echo survives a Stop). */
     dispose() {
