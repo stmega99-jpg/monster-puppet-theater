@@ -46,6 +46,20 @@
       <button class="btn btn--stop" id="stopBtn" type="button" disabled>Stop <span>Curtain Call</span></button>
     </div>
 
+    <!-- Program: generated band name, song title, and the two souvenirs -->
+    <section class="playbill" aria-label="Tonight's program">
+      <p class="playbill__eyebrow">Now Performing</p>
+      <h2 class="playbill__band" id="bandName"></h2>
+      <p class="playbill__tagline" id="bandTagline"></p>
+      <p class="playbill__song" id="songTitle"></p>
+      <p class="playbill__genre" id="songGenre"></p>
+      <div class="playbill__actions">
+        <button class="btn btn--small" id="posterBtn" type="button">Save Poster (PNG)</button>
+        <button class="btn btn--small" id="wavBtn" type="button">Export Loop (WAV)</button>
+      </div>
+      <p class="playbill__status" id="exportStatus" role="status" aria-live="polite"></p>
+    </section>
+
     <!-- Puppet selection + 3-slot UI -->
     <section class="workbench" aria-label="Puppet editor">
       <nav class="tabs" id="puppetTabs" role="tablist" aria-label="Select puppet"></nav>

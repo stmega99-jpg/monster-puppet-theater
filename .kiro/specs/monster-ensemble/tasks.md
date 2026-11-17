@@ -8,7 +8,7 @@
   - Implement the harmonic map `Cm -> Ab -> Fm -> G7` (4-note chord arrays, bass in the C2 to Ab3 range), ensemble-wide unified swing, master delay + compressor, bulk disposal of `activeNodes`, and `visualQueue` synchronization based on `getOutputTimestamp()` (sharing the swing-adjusted time).
 - [x] 3. 🎃 Pumpkin puppet (Lead Synth): draw the 3 slots x 3 parts (9 parts), mouth-flap and poke-triggered motion (_Requirements: 2.1, 2.2, 2.3, 2.4, 3.1, 3.2_)
   - Draw eyes (crescent/button/star), noses (Polka/Shuffle/Tango), and mouths (jagged/round/fanged), with matching timbre changes. Implement mouth flapping and candle glow, the lights-out dozing pose, poking that briefly wakes the puppet to play one note even while muted, and the bow at curtain down.
-- [ ] 4. Implement the band name generator, the storybook performance poster (PNG) export, and the seamless loop WAV export (_Requirements: 4.1, 4.2, 4.3_)
+- [x] 4. Implement the band name generator, the storybook performance poster (PNG) export, and the seamless loop WAV export (_Requirements: 4.1, 4.2, 4.3_)
   - Implement alias generation, saving a parchment-style poster as PNG, and seamless `.wav` output by rendering two loops in an `OfflineAudioContext` and cutting out the second half.
 
 ## Phase 2: Monster band members (💀, 🧪, 👻) join one by one
