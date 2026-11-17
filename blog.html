@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How I Built a Haunted Musical Theater in One Day with Kiro — Monster Puppet Theater</title>
+  <meta name="description" content="A Kiroween 2026 development diary: building Monster Puppet Theater, a four-monster musical toy, with Kiro's spec-driven workflow.">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    /* Blog-specific layout, built on the theater's own palette and type (css/style.css).
+       This file does not modify the game; it only reuses the shared antique look. */
+
+    .blog { width: min(760px, 100% - 24px); margin: 0 auto 64px; }
+
+    .blog-byline {
+      text-align: center; margin: 0 0 30px; font-style: italic; font-size: 0.9rem;
+      color: var(--brass-accent); opacity: 0.85; letter-spacing: 0.04em;
+    }
+
+    /* The article sits on the same parchment plaque as the playbill, with the same brass triple border. */
+    .article {
+      padding: 34px clamp(20px, 5vw, 56px) 40px; border-radius: 8px; color: var(--sepia-ink);
+      background:
+        radial-gradient(ellipse at 20% 0%, rgba(255, 255, 255, 0.35), transparent 55%),
+        radial-gradient(ellipse at 100% 100%, rgba(120, 80, 40, 0.28), transparent 60%),
+        var(--parchment-bg);
+      box-shadow:
+        inset 0 0 0 2px rgba(0, 0, 0, 0.6), inset 0 0 0 4px var(--brass-accent),
+        inset 0 0 0 6px rgba(0, 0, 0, 0.6), inset 0 0 40px rgba(120, 80, 40, 0.25),
+        0 14px 26px rgba(0, 0, 0, 0.55);
+      font-family: var(--font-body);
+      line-height: 1.7;
+    }
+
+    .article h2 {
+      font-family: var(--font-display); font-size: 1.5rem; margin: 2.1em 0 0.6em;
+      color: var(--sepia-ink); border-bottom: 2px solid var(--brass-accent); padding-bottom: 0.3em;
+    }
+    .article h2:first-of-type { margin-top: 0.2em; }
+    .article p { margin: 0 0 1.1em; font-size: 1.02rem; }
+    .article p:first-of-type { margin-top: 0; }
+    .article strong { color: #5e4818; }
+
+    .article a { color: #6e4b1a; text-decoration: underline; text-decoration-color: var(--brass-accent); text-decoration-thickness: 1.5px; }
+    .article a:hover { color: var(--curtain-red); }
+
+    /* A short standout line, like the curtain-hint plaque on the stage. */
+    .pull-line {
+      margin: 1.6em auto; max-width: 30em; text-align: center; padding: 10px 20px; border-radius: 2px;
+      font-family: var(--font-display); font-style: italic; letter-spacing: 0.04em; font-size: 1.1rem;
+      color: #6e4b1a; border: 1px solid rgba(110, 75, 58, 0.45); background: rgba(110, 75, 58, 0.06);
+    }
+
+    /* Brass stat plaque for the credit-usage figure. */
+    .stat-plaque {
+      display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: stretch;
+      margin: 1.4em 0 1.8em;
+    }
+    .stat-plaque__item {
+      flex: 1 1 140px; text-align: center; padding: 14px 10px; border-radius: 6px;
+      background: linear-gradient(180deg, #3a2620, #2a1c16);
+      box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.6), inset 0 0 0 3px var(--brass-accent), inset 0 0 0 4px rgba(0, 0, 0, 0.6);
+    }
+    .stat-plaque__num {
+      display: block; font-family: var(--font-display); font-size: 1.9rem; line-height: 1.1;
+      background: linear-gradient(180deg, #F0DCA3, #C5A059 55%, #8E6F33);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .stat-plaque__label { display: block; margin-top: 2px; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--parchment-bg); opacity: 0.8; }
+
+    .article ul { margin: 0 0 1.1em; padding-left: 1.4em; }
+    .article li { margin-bottom: 0.4em; }
+
+    /* The two closing CTAs, styled as the theater's own brass / curtain buttons. */
+    .blog-actions { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; margin: 2em 0 0.4em; }
+    .blog-actions .btn { text-decoration: none; display: inline-flex; flex-direction: column; align-items: center; }
+
+    .blog-footer {
+      text-align: center; margin-top: 40px; font-size: 0.8rem; letter-spacing: 0.08em; color: var(--brass-accent); opacity: 0.75;
+    }
+    .blog-footer a { color: inherit; }
+
+    @media (max-width: 640px) {
+      .article { padding: 26px 18px 30px; }
+      .stat-plaque__item { flex-basis: 45%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="marquee">
+    <p class="marquee__eyebrow">— Development Diary —</p>
+    <h1 class="marquee__title">How I Built a Haunted Musical Theater<br>in One Day with Kiro</h1>
+    <p class="marquee__sub">Monster Puppet Theater &middot; Kiroween 2026 Bonus Blog Entry</p>
+  </header>
+
+  <main class="blog">
+    <p class="blog-byline">November 17, 2026 — Kiroween 2026 Development Diary</p>
+
+    <article class="article">
+      <h2>From a Tiny Idea to a Haunted Orchestra</h2>
+      <p>What if Halloween monsters were musical instruments?</p>
+      <p>That simple idea became <strong>Monster Puppet Theater</strong>, an interactive musical toy featuring four customizable monsters performing inside an antique miniature theater.</p>
+
+      <h2>Building with Kiro</h2>
+      <p>I used Kiro Web's Spec-Driven Development workflow to organize the project into eight development tasks, supported by detailed requirements, architectural specifications, and persistent steering rules.</p>
+      <p>Instead of micromanaging every implementation detail, I gave Kiro musical constraints and artistic direction while allowing it to develop the artwork, animations, and technical solutions independently.</p>
+      <p>Each development milestone was delivered through a GitHub pull request.</p>
+
+      <h2>An Unexpected Lesson in Digital Audio</h2>
+      <p>During integration testing, Kiro discovered waveform discrepancies between successive audio loops.</p>
+      <p>At 44,100&nbsp;Hz, our musical loop contains exactly 189,000 sample frames, which is not divisible by Web Audio's 128-frame render block.</p>
+      <p>Kiro investigated the problem and implemented a solution using an intermediate sample rate of 44,800&nbsp;Hz and circular Kaiser-windowed sinc resampling.</p>
+      <p>Its numerical tests demonstrated substantially smoother loop boundaries.</p>
+      <p class="pull-line">Watching Kiro independently investigate and solve this problem was one of the most fascinating moments of the project.</p>
+
+      <h2>Kiro Became a Video Producer</h2>
+      <p>I also asked Kiro to create the demonstration video.</p>
+      <p>Despite the limitations of its cloud environment, Kiro developed its own recording pipeline using Playwright, timestamped screenshots, Web Audio capture, and Chromium's MediaRecorder.</p>
+      <p>It produced an English-language demonstration video featuring actual gameplay and synthesized music.</p>
+
+      <h2>An Entire Project for 102 Credits</h2>
+      <p>The entire development process, including implementation, procedural artwork, audio engineering, automated testing, and video production, consumed approximately 102 of my 4,000 Kiro credits.</p>
+      <div class="stat-plaque">
+        <div class="stat-plaque__item">
+          <span class="stat-plaque__num">102</span>
+          <span class="stat-plaque__label">Credits Used</span>
+        </div>
+        <div class="stat-plaque__item">
+          <span class="stat-plaque__num">4,000</span>
+          <span class="stat-plaque__label">Credits Available</span>
+        </div>
+        <div class="stat-plaque__item">
+          <span class="stat-plaque__num">2.6%</span>
+          <span class="stat-plaque__label">Of Allocation</span>
+        </div>
+      </div>
+      <p>That is less than 2.6% of the available allocation.</p>
+
+      <h2>What Kiro Changed for Me</h2>
+      <p>As an independent game creator, I want to spend more time imagining experiences and less time struggling with implementation details.</p>
+      <p>Kiro's specification-driven workflow allowed me to concentrate on creative decisions while the agent handled much of the technical work.</p>
+      <p>What began as a small Halloween experiment became a complete interactive musical theater in a single day.</p>
+      <p>And there are still plenty of credits left for the next adventure!</p>
+
+      <div class="blog-actions">
+        <a class="btn" href="index.html">Play<span>Monster Puppet Theater</span></a>
+        <a class="btn btn--stop" href="https://github.com/stmega99-jpg/monster-puppet-theater">Source Code<span>on GitHub</span></a>
+      </div>
+    </article>
+
+    <p class="blog-footer">Monster Puppet Theater &middot; Built with <a href="https://kiro.dev">Kiro</a> for Kiroween 2026</p>
+  </main>
+</body>
+</html>
