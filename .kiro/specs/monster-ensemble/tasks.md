@@ -22,7 +22,7 @@
 
 ## Phase 3: Integration testing and edge-case verification
 
-- [ ] 8. Verify repeated play, rapid stop, mute behavior, and the WAV loop boundary (_Requirements: 1.2, 1.3, 1.4, 2.4, 4.3_)
+- [x] 8. Verify repeated play, rapid stop, mute behavior, and the WAV loop boundary (_Requirements: 1.2, 1.3, 1.4, 2.4, 4.3_)
   - **8.1 Play/Stop/bow interruption**: Confirm that mashing Play and Stop causes no double playback or lingering sound, and that pressing Play in the middle of the curtain call (skull tumble) restarts normally and immediately.
   - **8.2 Mute and poke**: Confirm that a muted puppet stays silent and dozing during loop playback, and that only a direct click ("poke") makes it open its eyes briefly, play one note, and return to dozing.
-  - **8.3 Seamless WAV loop boundary**: Confirm that the exported WAV has exactly one loop's worth of samples (32 steps), that the delay reverb carries over into the start, and that looping it produces no cut-offs or silent gaps.
+  - **8.3 Seamless WAV loop boundary**: Confirm that the exported WAV has exactly one loop's worth of samples (32 steps), that the delay reverb carries over into the start, and that looping it produces no cut-offs or silent gaps. Found and fixed a seam mismatch: 189000 frames at 44100 Hz is not a multiple of the browser's 128-frame render block, so loop 2 and loop 3 of a rendering did not match. The loop is now rendered at 44800 Hz (192000 frames = 1500 blocks, so it is periodic) and converted to 44100 Hz with a circular band-limited resampler, keeping the file at the same 189000 frames.

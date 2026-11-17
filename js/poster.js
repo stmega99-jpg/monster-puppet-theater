@@ -400,15 +400,14 @@ function drawStagePicture(ctx, px, py, pw, ph, images, rng) {
   drawBackdrop(ctx, pw, ph, rng);
   drawFloor(ctx, pw, ph);
 
-  // puppets, hanging from their bars
-  const usableL = 108, usableR = pw - 108;
-  const slotW = (usableR - usableL) / images.length;
-  const drawH = 452;
+  // Puppets, hanging from their bars. Each has its own centre, set from how wide the finished puppet
+  // is (the cauldron and the ghost carry handles and held items), so nothing is hidden behind a curtain.
+  const centers = [0.2, 0.365, 0.557, 0.752].map((f) => f * pw);
+  const drawH = 436;
   const drawW = (drawH * PUPPET_IMAGE_ASPECT.width) / PUPPET_IMAGE_ASPECT.height;
   const sway = [-1.6, 1.2, -0.9, 1.8];
-  const nudge = [8, 0, 0, -14];     // the outer puppets move in a little so a held item is not hidden by a curtain
   images.forEach(({ img, name }, i) => {
-    const cx = usableL + slotW * (i + 0.5) + (nudge[i] ?? 0);
+    const cx = centers[i] ?? pw * ((i + 0.5) / images.length);
     ctx.save();
     ctx.translate(cx, 12);
     ctx.rotate((sway[i % sway.length] * Math.PI) / 180);

@@ -18,4 +18,4 @@ python3 -m http.server 8000   # then open http://localhost:8000
 - [x] Task 5: skeleton drummer (9 parts, Bone Marimba, rib tapping, dozing pose) and the skull tumble gag at the curtain call
 - [x] Task 6: witch's cauldron (9 parts, Acid Bubble Bass, poison bubbles that pop, simmering dozing pose, bow)
 - [x] Task 7: ghost (9 parts, Theremin Choir Pad, squash and stretch, dozing pose, bow), four-piece volume balance and the finished four-member poster
-- [ ] Task 8: integration testing and edge cases, see `.kiro/specs/monster-ensemble/tasks.md`
+- [x] Task 8: integration testing and edge cases (Play/Stop/curtain-call interruption, mute/solo/poke for all four puppets, node cleanup, posters and WAV export for all four, WAV seamless-loop fix), see `.kiro/specs/monster-ensemble/tasks.md`
