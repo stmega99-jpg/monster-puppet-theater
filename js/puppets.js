@@ -1,5 +1,5 @@
-// Task 1 用の仮ボディ（シルエット）。各パペットの本描画は Task 3, 5, 6, 7 で差し替える。
-// 麻の操り糸（rgba(212,195,163,0.35)）と木の操り棒は全パペット共通。
+// Placeholder bodies (silhouettes) for Task 1. Tasks 3, 5, 6 and 7 replace them with the real puppet art.
+// The hemp control strings (rgba(212,195,163,0.35)) and the wooden control bar are shared by every puppet.
 
 const STRING = 'rgba(212, 195, 163, 0.35)';
 const INK = '#2C1E18';

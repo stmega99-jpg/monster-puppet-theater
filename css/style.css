@@ -1,5 +1,5 @@
 /* Monster Puppet Theater — Antique Wood & Faded Storybook
-   パレットは .kiro/specs/monster-ensemble/design.md §1 に準拠。蛍光色は使わない。 */
+   Palette follows .kiro/specs/monster-ensemble/design.md section 1. No fluorescent colors. */
 
 :root {
   --bg-stage-dark: #1A1412;
@@ -34,7 +34,7 @@ body {
     var(--bg-stage-dark);
 }
 
-/* ---------- 看板 ---------- */
+/* ---------- Marquee ---------- */
 .marquee { text-align: center; padding: 28px 16px 8px; }
 .marquee__eyebrow {
   margin: 0; font-size: 0.8rem; letter-spacing: 0.4em; color: var(--brass-accent); opacity: 0.85;
@@ -53,7 +53,7 @@ body {
 
 .theater { width: min(980px, 100% - 24px); margin: 0 auto; padding-bottom: 56px; }
 
-/* ---------- 額縁（プロセニアム） ---------- */
+/* ---------- Wooden frame (proscenium) ---------- */
 .proscenium {
   position: relative;
   padding: 3.6% 3.6% 7.5%;
@@ -70,7 +70,7 @@ body {
     0 24px 50px rgba(0, 0, 0, 0.75);
 }
 
-/* 四隅の真鍮飾り */
+/* Brass corner rosettes */
 .frame-corner {
   position: absolute; width: 5.2%; aspect-ratio: 1; z-index: 6;
   background: radial-gradient(circle at 35% 30%, #F0DCA3, #C5A059 45%, #6E5222 100%);
@@ -86,7 +86,7 @@ body {
 .frame-corner--bl { bottom: 0.8%; left: 0.8%; }
 .frame-corner--br { bottom: 0.8%; right: 0.8%; }
 
-/* ---------- ステージ ---------- */
+/* ---------- Stage ---------- */
 .stage {
   position: relative; overflow: hidden;
   aspect-ratio: 16 / 9;
@@ -94,7 +94,7 @@ body {
   box-shadow: 0 0 0 3px #1b110d, 0 0 0 5px var(--brass-accent), 0 0 0 7px #1b110d, inset 0 0 60px rgba(0, 0, 0, 0.8);
 }
 
-/* 色褪せた絵本の背景画: 月・丘・傾いた屋敷・枯れ木。紙の粒子ノイズ入り。 */
+/* Faded storybook backdrop: moon, hills, crooked manor, bare tree, with paper grain noise. */
 .backdrop {
   position: absolute; inset: 0;
   background:
@@ -103,14 +103,14 @@ body {
   filter: sepia(0.35) saturate(0.75) brightness(0.85);
 }
 
-/* 開演時の天井スポット */
+/* Overhead spotlight while the show is on */
 .spotlight {
   position: absolute; inset: 0; pointer-events: none; opacity: 0;
   background: radial-gradient(ellipse 60% 85% at 50% 0%, rgba(247, 200, 115, 0.22), transparent 70%);
   transition: opacity 1.4s ease 0.5s;
 }
 
-/* 床板 */
+/* Floorboards */
 .floor {
   position: absolute; left: 0; right: 0; bottom: 0; height: 17%;
   background:
@@ -120,14 +120,14 @@ body {
   border-top: 2px solid rgba(0, 0, 0, 0.6);
   box-shadow: inset 0 14px 18px -8px rgba(0, 0, 0, 0.7);
 }
-/* フットライトの照り返し */
+/* Footlight glow reflected on the floor */
 .floor::after {
   content: ''; position: absolute; inset: 0; opacity: 0;
   background: radial-gradient(ellipse 70% 120% at 50% 100%, rgba(247, 200, 115, 0.5), transparent 70%);
   transition: opacity 1s ease 0.6s;
 }
 
-/* ---------- パペット（Task 1 では仮シルエット） ---------- */
+/* ---------- Puppets (placeholder silhouettes in Task 1) ---------- */
 .puppets {
   position: absolute; inset: 0 5% 3% 5%;
   display: flex; justify-content: space-around; align-items: flex-start;
@@ -145,7 +145,7 @@ body {
 .puppet svg { display: block; width: 100%; height: auto; overflow: visible; }
 .puppet:hover { filter: drop-shadow(0 6px 5px rgba(0, 0, 0, 0.55)) brightness(1.08); }
 
-/* 選ばれているパペットの足元に真鍮の名札 */
+/* Brass nameplate at the feet of the selected puppet */
 .puppet::after {
   content: attr(data-name);
   position: absolute; left: 50%; bottom: -3%; transform: translateX(-50%);
@@ -161,12 +161,12 @@ body {
 .puppet .zzz { opacity: 0; }
 .puppet .eyes { transform-origin: 70px 140px; transition: transform 0.4s; }
 
-/* 居眠り姿（Mute / 他トラックの Solo） */
+/* Dozing pose (Mute, or silenced by another track's Solo) */
 .puppet.is-asleep .body { filter: brightness(0.62) saturate(0.55); transform: scaleY(0.94); }
 .puppet.is-asleep .eyes { transform: scaleY(0.12); }
 .puppet.is-asleep .zzz { opacity: 0.9; animation: zzz 3s ease-in-out infinite; }
 
-/* ---------- 深紅のベルベットカーテン ---------- */
+/* ---------- Crimson velvet curtains ---------- */
 .curtain {
   position: absolute; top: 0; bottom: 0; width: 52%; z-index: 4;
   background:
@@ -178,7 +178,7 @@ body {
   box-shadow: 0 0 24px rgba(0, 0, 0, 0.7);
   transition: transform 1.3s cubic-bezier(0.65, 0, 0.25, 1);
 }
-.curtain::after { /* 裾の金房 */
+.curtain::after { /* Gold fringe along the hem */
   content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2.6%;
   background: repeating-linear-gradient(90deg, #C5A059 0 3px, #8E6F33 3px 6px);
   opacity: 0.85;
@@ -202,7 +202,7 @@ body {
 }
 .proscenium:not([data-state='closed']) .curtain-hint { opacity: 0; }
 
-/* 上部の垂れ幕（バランス） */
+/* Top valance */
 .valance {
   position: absolute; z-index: 5; left: 3.6%; right: 3.6%; top: 3.6%;
   height: 7.5%;
@@ -212,7 +212,7 @@ body {
   border-bottom: 3px solid var(--brass-accent);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.6);
 }
-.valance::after { /* スカラップ */
+.valance::after { /* Scalloped edge */
   content: ''; position: absolute; left: 0; right: 0; top: 100%; height: 55%;
   background: radial-gradient(circle at 50% 0, var(--curtain-red) 0 62%, transparent 64%) 0 0 / 8.333% 100% repeat-x;
   filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.55));
@@ -226,13 +226,13 @@ body {
 .valance__tassel--l { left: 2%; }
 .valance__tassel--r { right: 2%; }
 
-/* ---------- ロウソクのフットライト ---------- */
+/* ---------- Candle footlights ---------- */
 .footlights {
   position: absolute; z-index: 7; left: 9%; right: 9%; bottom: 1.4%; height: 6.2%;
   display: flex; justify-content: space-between; align-items: flex-end;
   font-size: clamp(8px, 1.45vw, 15px);
 }
-.footlights::before { /* 真鍮のトレイ */
+.footlights::before { /* Brass tray */
   content: ''; position: absolute; left: -2%; right: -2%; bottom: -0.3em; height: 0.7em;
   background: var(--brass-grad); border-radius: 0.4em;
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.35);
@@ -243,7 +243,7 @@ body {
   background: linear-gradient(90deg, #cbb98f, #F0E3C0 40%, #cbb98f);
   box-shadow: inset 0 -4px 6px rgba(0, 0, 0, 0.25);
 }
-.wax::after { /* 垂れたロウ */
+.wax::after { /* Dripped wax */
   content: ''; position: absolute; top: 0; left: 18%; width: 22%; height: 55%;
   background: #F6EBCB; border-radius: 0 0 50% 50%;
 }
@@ -258,7 +258,7 @@ body {
   transition-delay: calc(var(--d) * 0.6);
 }
 
-/* 点灯: 開演中とカーテンコール中 */
+/* Lit while the show is open and during the curtain call */
 .proscenium[data-state='open'] .flame,
 .proscenium[data-state='curtain_call'] .flame { opacity: 1; animation: flicker 1.6s ease-in-out infinite; animation-delay: var(--d); }
 .proscenium[data-state='open'] .spotlight,
@@ -266,7 +266,7 @@ body {
 .proscenium[data-state='open'] .floor::after,
 .proscenium[data-state='curtain_call'] .floor::after { opacity: 1; }
 
-/* カーテンコール: 一斉お辞儀（約1.8秒以内に収める） */
+/* Curtain call: all puppets bow together (kept within about 1.8 s) */
 .proscenium[data-state='curtain_call'] .puppet .body {
   animation: bow 1.5s ease-in-out both;
 }
@@ -290,7 +290,7 @@ body {
 }
 @keyframes zzz { 0%, 100% { transform: translateY(0); opacity: 0.55; } 50% { transform: translateY(-7px); opacity: 1; } }
 
-/* ---------- 開演・閉演ボタン ---------- */
+/* ---------- Play / Stop buttons ---------- */
 .controls { display: flex; justify-content: center; gap: 18px; margin: 28px 0 24px; }
 .btn {
   min-width: 150px; padding: 12px 26px; cursor: pointer;
@@ -307,7 +307,7 @@ body {
 .btn:disabled { cursor: not-allowed; filter: grayscale(0.7) brightness(0.55); }
 .btn:focus-visible, .tab:focus-visible, .opt:focus-visible, .toggle:focus-visible { outline: 2px solid var(--candle); outline-offset: 3px; }
 
-/* ---------- 編集パネル（羊皮紙） ---------- */
+/* ---------- Editor panel (parchment) ---------- */
 .tabs { display: flex; gap: 6px; padding: 0 12px; }
 .tab {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -362,7 +362,7 @@ body {
   background: rgba(255, 255, 255, 0.35); border: 1px solid rgba(44, 30, 24, 0.35); border-radius: 4px;
   transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
 }
-.opt::before { /* パペット色の栞 */
+.opt::before { /* Bookmark strip in the puppet color */
   content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; border-radius: 4px 0 0 4px;
   background: var(--puppet); opacity: 0.3; transition: opacity 0.15s;
 }
@@ -375,7 +375,7 @@ body {
 .opt__name { font-weight: 700; font-size: 0.92rem; }
 .opt__note { font-size: 0.7rem; opacity: 0.65; font-style: italic; letter-spacing: 0.03em; }
 
-/* ---------- 狭い画面 ---------- */
+/* ---------- Narrow screens ---------- */
 @media (max-width: 640px) {
   .slot__opts { grid-template-columns: 1fr; }
   .tab__name { display: none; }

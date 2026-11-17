@@ -1,88 +1,89 @@
-// 4体のパペットと全36パーツの定義（design.md §1, §2 準拠）。
-// 音色パラメータは Task 2 以降で参照する。ここでは UI 表示用の名前と説明のみ保持する。
+// The four puppets and all 36 parts (design.md sections 1 and 2).
+// Sound parameters are consumed from Task 2 onward. This file only holds the
+// display names and short notes used by the UI.
 
 export const PUPPETS = [
   {
-    id: 'pumpkin', icon: '🎃', name: 'かぼちゃ', role: 'Lead Synth',
+    id: 'pumpkin', icon: '🎃', name: 'Pumpkin', role: 'Lead Synth',
     color: '#D97236', accent: '#F7C873',
     slots: [
-      { label: '目', hint: '音色', options: [
-        { name: '三日月目', note: 'triangle + Sub' },
-        { name: '木製ボタン目', note: 'square' },
-        { name: '星くり抜き目', note: 'detuned saw' },
+      { label: 'Eyes', hint: 'Timbre', options: [
+        { name: 'Crescent Eyes', note: 'triangle + Sub' },
+        { name: 'Wooden Button Eyes', note: 'square' },
+        { name: 'Star Cutout Eyes', note: 'detuned saw' },
       ]},
-      { label: '鼻', hint: 'フレーズ', options: [
-        { name: '三角彫り鼻', note: 'Clockwork Polka' },
-        { name: 'くるりん蔓鼻', note: 'Ghostly Shuffle' },
-        { name: '逆さハート鼻', note: 'Cabaret Tango' },
+      { label: 'Nose', hint: 'Phrase', options: [
+        { name: 'Triangle-Carved Nose', note: 'Clockwork Polka' },
+        { name: 'Curly Vine Nose', note: 'Ghostly Shuffle' },
+        { name: 'Upside-Down Heart Nose', note: 'Cabaret Tango' },
       ]},
-      { label: '口', hint: '奏法', options: [
-        { name: 'ギザギザ笑顔', note: 'Staccato' },
-        { name: 'おちょぼ丸口', note: 'Vibrato' },
-        { name: 'ニヤリ八重歯', note: 'Portamento' },
+      { label: 'Mouth', hint: 'Playing Style', options: [
+        { name: 'Jagged Grin', note: 'Staccato' },
+        { name: 'Little Round Mouth', note: 'Vibrato' },
+        { name: 'Sly Fang Grin', note: 'Portamento' },
       ]},
     ],
   },
   {
-    id: 'skeleton', icon: '💀', name: '骸骨', role: 'Drums & Bone Marimba',
+    id: 'skeleton', icon: '💀', name: 'Skeleton', role: 'Drums & Bone Marimba',
     color: '#E8DCC4', accent: '#B5A48B',
     slots: [
-      { label: '頭', hint: 'ドラム音質', options: [
-        { name: '折れシルクハット', note: 'Wood Kick + Brush' },
-        { name: 'ぜんまいネジ頭', note: 'Toy Kick + Snappy' },
-        { name: 'ブリキ王冠', note: 'Deep Kick + Rim' },
+      { label: 'Head', hint: 'Drum Tone', options: [
+        { name: 'Bent Top Hat', note: 'Wood Kick + Brush' },
+        { name: 'Wind-Up Key Head', note: 'Toy Kick + Snappy' },
+        { name: 'Tin Crown', note: 'Deep Kick + Rim' },
       ]},
-      { label: '肋骨', hint: 'ビート', options: [
-        { name: '4つ箱あばら', note: 'Clockwork Polka' },
-        { name: '真鍮継ぎあばら', note: 'Ghostly Shuffle' },
-        { name: '蜘蛛の巣あばら', note: 'Cabaret Tango' },
+      { label: 'Ribs', hint: 'Beat', options: [
+        { name: 'Four-Box Ribs', note: 'Clockwork Polka' },
+        { name: 'Brass-Jointed Ribs', note: 'Ghostly Shuffle' },
+        { name: 'Cobweb Ribs', note: 'Cabaret Tango' },
       ]},
-      { label: 'バチ', hint: '木琴音色', options: [
-        { name: '大腿骨マレット', note: 'Warm Marimba' },
-        { name: '銀のスプーン', note: 'Glassy Xylophone' },
-        { name: '枯れ枝タクト', note: 'Wood Clack' },
+      { label: 'Mallet', hint: 'Marimba Tone', options: [
+        { name: 'Femur Mallet', note: 'Warm Marimba' },
+        { name: 'Silver Spoon', note: 'Glassy Xylophone' },
+        { name: 'Dry Twig Baton', note: 'Wood Clack' },
       ]},
     ],
   },
   {
-    id: 'cauldron', icon: '🧪', name: '魔女の大釜', role: 'Acid Bubble Bass',
+    id: 'cauldron', icon: '🧪', name: "Witch's Cauldron", role: 'Acid Bubble Bass',
     color: '#2B303A', accent: '#76A884',
     slots: [
-      { label: '釜', hint: '波形', options: [
-        { name: '猫足の黒鉄釜', note: 'sawtooth' },
-        { name: '真鍮ツギハギ釜', note: 'square + EnvLPF' },
-        { name: 'ひび割れ陶器釜', note: 'triangle + Sub' },
+      { label: 'Pot', hint: 'Waveform', options: [
+        { name: 'Cat-Footed Iron Cauldron', note: 'sawtooth' },
+        { name: 'Patchwork Brass Cauldron', note: 'square + EnvLPF' },
+        { name: 'Cracked Ceramic Cauldron', note: 'triangle + Sub' },
       ]},
-      { label: '具材', hint: 'パターン', options: [
-        { name: '光る毒キノコ', note: 'Clockwork Polka' },
-        { name: 'ぜんまいカエル', note: 'Ghostly Shuffle' },
-        { name: '星空の目玉', note: 'Cabaret Tango' },
+      { label: 'Ingredient', hint: 'Pattern', options: [
+        { name: 'Glowing Poison Mushroom', note: 'Clockwork Polka' },
+        { name: 'Wind-Up Frog', note: 'Ghostly Shuffle' },
+        { name: 'Starry Eyeball', note: 'Cabaret Tango' },
       ]},
-      { label: '炎', hint: 'エンベロープ', options: [
-        { name: '蜜蝋ろうそく束', note: 'Pluck' },
-        { name: '狐火ランタン', note: 'Glide' },
-        { name: 'パチパチ茨薪', note: 'Punch' },
+      { label: 'Flame', hint: 'Envelope', options: [
+        { name: 'Beeswax Candle Bundle', note: 'Pluck' },
+        { name: 'Foxfire Lantern', note: 'Glide' },
+        { name: 'Crackling Bramble Logs', note: 'Punch' },
       ]},
     ],
   },
   {
-    id: 'ghost', icon: '👻', name: '幽霊', role: 'Theremin Choir Pad',
+    id: 'ghost', icon: '👻', name: 'Ghost', role: 'Theremin Choir Pad',
     color: '#EAE6DF', accent: '#D98A82',
     slots: [
-      { label: '帽子', hint: '声質', options: [
-        { name: '縞々ナイトキャップ', note: 'Theremin Choir' },
-        { name: '絵本の紙王冠', note: 'Reed Organ' },
-        { name: '古レースのベール', note: 'Glass Pad' },
+      { label: 'Hat', hint: 'Voice', options: [
+        { name: 'Striped Nightcap', note: 'Theremin Choir' },
+        { name: 'Storybook Paper Crown', note: 'Reed Organ' },
+        { name: 'Old Lace Veil', note: 'Glass Pad' },
       ]},
-      { label: '顔', hint: 'ボイシング', options: [
-        { name: 'ぽかん丸口', note: 'Clockwork Polka' },
-        { name: 'にっこり糸目', note: 'Ghostly Shuffle' },
-        { name: 'おろおろ涙目', note: 'Cabaret Tango' },
+      { label: 'Face', hint: 'Voicing', options: [
+        { name: 'Gaping Round Mouth', note: 'Clockwork Polka' },
+        { name: 'Smiling Slit Eyes', note: 'Ghostly Shuffle' },
+        { name: 'Teary Fretful Eyes', note: 'Cabaret Tango' },
       ]},
-      { label: '持ち物', hint: 'LFO', options: [
-        { name: '小さな真鍮角燈', note: 'Tremolo' },
-        { name: '鎖の懐中時計', note: 'Pitch Vibrato' },
-        { name: '羽根ペンと楽譜', note: 'Octave Shimmer' },
+      { label: 'Item', hint: 'LFO', options: [
+        { name: 'Small Brass Lantern', note: 'Tremolo' },
+        { name: 'Chained Pocket Watch', note: 'Pitch Vibrato' },
+        { name: 'Quill and Sheet Music', note: 'Octave Shimmer' },
       ]},
     ],
   },

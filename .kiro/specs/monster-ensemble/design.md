@@ -1,33 +1,33 @@
 # Technical Design: Monster Puppet Session
 
-## 1. 美術・世界観パレット（Antique Wood & Faded Storybook）
-- 蛍光色を排し、アンティーク木彫りパペットと色褪せた絵本の質感をCSS変数とCanvas/SVG描画で統一する：
+## 1. Art direction and palette (Antique Wood & Faded Storybook)
+- No fluorescent colors. The look of antique wood-carved puppets and a faded storybook is unified through CSS variables and Canvas/SVG drawing:
   - `--bg-stage-dark: #1A1412`, `--wood-frame: #4A3228`, `--wood-highlight: #6E4B3A`, `--brass-accent: #C5A059`
   - `--curtain-red: #6B1D2F`, `--curtain-shadow: #3D0E19`, `--parchment-bg: #F2E6D0`, `--sepia-ink: #2C1E18`
-  - パペット基本色: Pumpkin `#D97236` (Candle `#F7C873`), Skeleton `#E8DCC4` (Shadow `#B5A48B`), Cauldron `#2B303A` (Bubble `#76A884`), Ghost `#EAE6DF` (Blush `#D98A82`)
-- 各パペット上部には細い麻の操り糸（`rgba(212, 195, 163, 0.35)`）を描画する。
+  - Puppet base colors: Pumpkin `#D97236` (Candle `#F7C873`), Skeleton `#E8DCC4` (Shadow `#B5A48B`), Cauldron `#2B303A` (Bubble `#76A884`), Ghost `#EAE6DF` (Blush `#D98A82`)
+- Draw thin hemp control strings (`rgba(212, 195, 163, 0.35)`) above each puppet.
 
-## 2. 全36種類の外見パーツ＆音色パラメータ定義
-- **🎃 かぼちゃ（Lead Synth / Gain `0.26`）**:
-  - Slot A (目/音色): `0: 三日月目` (`triangle`+Sub `sine`, LPF `1400Hz`), `1: 木製ボタン目` (`square`, LPF `1800Hz`, Q `2.5`), `2: 星くり抜き目` (Detuned `sawtooth` ±8c, LPF `2600Hz`)
-  - Slot B (鼻/フレーズ): `0: 三角彫り鼻` (Clockwork Polka), `1: くるりん蔓鼻` (Ghostly Shuffle), `2: 逆さハート鼻` (Cabaret Tango)
-  - Slot C (口/奏法): `0: ギザギザ笑顔` (Staccato Decay `0.16s`), `1: おちょぼ丸口` (Vibrato 5.5Hz, Decay `0.38s`), `2: ニヤリ八重歯` (Portamento Glide, Decay `0.26s`)
-- **💀 骸骨（Drums & Bone Marimba / Kick `0.30`, Snare `0.16`, Rib `0.18`）**:
-  - Slot A (頭/ドラム音質): `0: 折れシルクハット` (Wood Kick `110->45Hz` + Brush Snare), `1: ぜんまいネジ頭` (Toy Kick `140->55Hz` + Snappy Snare), `2: ブリキ王冠` (Deep Kick `90->38Hz` + Rim Clap)
-  - Slot B (肋骨/ビート): `0: 4つ箱あばら` (Clockwork Polka), `1: 真鍮継ぎあばら` (Ghostly Shuffle), `2: 蜘蛛の巣あばら` (Cabaret Tango)
-  - Slot C (バチ/木琴音色): `0: 大腿骨マレット` (Warm Marimba `sine`+4倍音), `1: 銀のスプーン` (Glassy Xylophone `triangle`+3倍音), `2: 枯れ枝タクト` (Wood Clack バンドパス木琴)
-- **🧪 魔女の大釜（Acid Bubble Bass / Gain `0.28`）**:
-  - Slot A (釜/波形): `0: 猫足の黒鉄釜` (`sawtooth`, LPF `280Hz`, Q `3.0`), `1: 真鍮ツギハギ釜` (`square`, EnvLPF `160->850Hz`, Q `8.0`), `2: ひび割れ陶器釜` (`triangle`+Sub, LPF `400Hz`, Q `2.0`)
-  - Slot B (具材/パターン): `0: 光る毒キノコ` (Clockwork Polka), `1: ぜんまいカエル` (Ghostly Shuffle), `2: 星空の目玉` (Cabaret Tango)
-  - Slot C (炎/エンベロープ): `0: 蜜蝋ろうそく束` (Pluck Decay `0.22s`), `1: 狐火ランタン` (Glide Decay `0.42s`), `2: パチパチ茨薪` (Punch Accent)
-- **👻 幽霊（Theremin Choir Pad / Gain `0.15`）**:
-  - Slot A (帽子/声質): `0: 縞々ナイトキャップ` (Theremin Choir 微デチューン`sine`), `1: 絵本の紙王冠` (Reed Organ `triangle`+`sawtooth`, LPF `1200Hz`), `2: 古レースのベール` (Glass Pad 倍音コーラス)
-  - Slot B (顔/ボイシング): `0: ぽかん丸口` (Clockwork Polka ロング和音), `1: にっこり糸目` (Ghostly Shuffle 裏拍和音), `2: おろおろ涙目` (Cabaret Tango タンゴ和音)
-  - Slot C (持ち物/LFO): `0: 小さな真鍮角燈` (Tremolo 4.5Hz), `1: 鎖の懐中時計` (Pitch Vibrato 6.0Hz ±15c), `2: 羽根ペンと楽譜` (Octave Shimmer)
+## 2. All 36 appearance parts and timbre parameters
+- **🎃 Pumpkin (Lead Synth / Gain `0.26`)**:
+  - Slot A (Eyes / timbre): `0: Crescent Eyes` (`triangle` + Sub `sine`, LPF `1400Hz`), `1: Wooden Button Eyes` (`square`, LPF `1800Hz`, Q `2.5`), `2: Star Cutout Eyes` (Detuned `sawtooth` ±8c, LPF `2600Hz`)
+  - Slot B (Nose / phrase): `0: Triangle-Carved Nose` (Clockwork Polka), `1: Curly Vine Nose` (Ghostly Shuffle), `2: Upside-Down Heart Nose` (Cabaret Tango)
+  - Slot C (Mouth / playing style): `0: Jagged Grin` (Staccato Decay `0.16s`), `1: Little Round Mouth` (Vibrato 5.5Hz, Decay `0.38s`), `2: Sly Fang Grin` (Portamento Glide, Decay `0.26s`)
+- **💀 Skeleton (Drums & Bone Marimba / Kick `0.30`, Snare `0.16`, Rib `0.18`)**:
+  - Slot A (Head / drum tone): `0: Bent Top Hat` (Wood Kick `110->45Hz` + Brush Snare), `1: Wind-Up Key Head` (Toy Kick `140->55Hz` + Snappy Snare), `2: Tin Crown` (Deep Kick `90->38Hz` + Rim Clap)
+  - Slot B (Ribs / beat): `0: Four-Box Ribs` (Clockwork Polka), `1: Brass-Jointed Ribs` (Ghostly Shuffle), `2: Cobweb Ribs` (Cabaret Tango)
+  - Slot C (Mallet / marimba tone): `0: Femur Mallet` (Warm Marimba `sine` + 4th harmonic), `1: Silver Spoon` (Glassy Xylophone `triangle` + 3rd harmonic), `2: Dry Twig Baton` (Wood Clack band-pass xylophone)
+- **🧪 Witch's Cauldron (Acid Bubble Bass / Gain `0.28`)**:
+  - Slot A (Pot / waveform): `0: Cat-Footed Iron Cauldron` (`sawtooth`, LPF `280Hz`, Q `3.0`), `1: Patchwork Brass Cauldron` (`square`, EnvLPF `160->850Hz`, Q `8.0`), `2: Cracked Ceramic Cauldron` (`triangle` + Sub, LPF `400Hz`, Q `2.0`)
+  - Slot B (Ingredient / pattern): `0: Glowing Poison Mushroom` (Clockwork Polka), `1: Wind-Up Frog` (Ghostly Shuffle), `2: Starry Eyeball` (Cabaret Tango)
+  - Slot C (Flame / envelope): `0: Beeswax Candle Bundle` (Pluck Decay `0.22s`), `1: Foxfire Lantern` (Glide Decay `0.42s`), `2: Crackling Bramble Logs` (Punch Accent)
+- **👻 Ghost (Theremin Choir Pad / Gain `0.15`)**:
+  - Slot A (Hat / voice): `0: Striped Nightcap` (Theremin Choir, slightly detuned `sine`), `1: Storybook Paper Crown` (Reed Organ `triangle` + `sawtooth`, LPF `1200Hz`), `2: Old Lace Veil` (Glass Pad, harmonic chorus)
+  - Slot B (Face / voicing): `0: Gaping Round Mouth` (Clockwork Polka, long chords), `1: Smiling Slit Eyes` (Ghostly Shuffle, off-beat chords), `2: Teary Fretful Eyes` (Cabaret Tango, tango chords)
+  - Slot C (Item / LFO): `0: Small Brass Lantern` (Tremolo 4.5Hz), `1: Chained Pocket Watch` (Pitch Vibrato 6.0Hz ±15c), `2: Quill and Sheet Music` (Octave Shimmer)
 
-## 3. 共通和声マップ（32ステップ: Cm -> Ab -> Fm -> G7, BPM 112）
-- 全コードの `chord` は要素数4に統一し、骸骨の肋骨4段（`M0..M3`）とG7のセブンス音（`F4 = 349.23Hz`）に対応する。
-- 大釜ベースの `root / fifth / octave` はノートPCのスピーカーでも明確に聴こえる `C2(65.41Hz)〜Ab3(207.65Hz)` 帯域に配置する。
+## 3. Shared harmonic map (32 steps: Cm -> Ab -> Fm -> G7, BPM 112)
+- Every chord's `chord` array has exactly 4 elements, matching the Skeleton's four rib rows (`M0..M3`) and the G7 seventh (`F4 = 349.23Hz`).
+- The Cauldron bass `root / fifth / octave` sit in the `C2 (65.41Hz)` to `Ab3 (207.65Hz)` range so they are clearly audible even on laptop speakers.
 
 ```javascript
 const CHORD_MAP = [
@@ -37,17 +37,17 @@ const CHORD_MAP = [
   { name: 'Ab', root: 103.83, fifth: 155.56, octave: 207.65, chord: [207.65, 261.63, 311.13, 415.30], scale: [207.65, 261.63, 311.13, 392.00, 415.30] },
   // 2: Fm (Steps 16..23) - Bass: F2, C3, F3 / Chord: F3, Ab3, C4, F4
   { name: 'Fm', root: 87.31,  fifth: 130.81, octave: 174.61, chord: [174.61, 207.65, 261.63, 349.23], scale: [174.61, 207.65, 261.63, 311.13, 349.23] },
-  // 3: G7 (Steps 24..31) - Bass: G2, D3, G3 / Chord: G3, B3(導音), D4, F4(7th)
+  // 3: G7 (Steps 24..31) - Bass: G2, D3, G3 / Chord: G3, B3 (leading tone), D4, F4 (7th)
   { name: 'G7', root: 98.00,  fifth: 146.83, octave: 196.00, chord: [196.00, 246.94, 293.66, 349.23], scale: [196.00, 246.94, 293.66, 349.23, 493.88] }
 ];
 ```
 
-## 4. リズムパターン配列と全トラック統一スウィング
-1. **全トラック統一スウィング判定（フラム防止）**:
-   - 主役（🎃かぼちゃ `tracks[0]`）またはドラム（💀骸骨 `tracks[1]`）の `slots[1] === 1 (Ghostly Shuffle)` が選択されている時、`isEnsembleSwing = true` とし、**全4トラック共通で**奇数ステップ（`step % 2 === 1`）に `swingOffset = stepDur * 0.32` を適用する。
+## 4. Rhythm pattern arrays and ensemble-wide swing
+1. **Ensemble-wide swing decision (prevents flams)**:
+   - When `slots[1] === 1 (Ghostly Shuffle)` is selected on the lead (🎃 Pumpkin `tracks[0]`) or the drums (💀 Skeleton `tracks[1]`), set `isEnsembleSwing = true` and apply `swingOffset = stepDur * 0.32` to odd steps (`step % 2 === 1`) on **all four tracks**.
    - `const scheduledTime = baseStepTime + (isEnsembleSwing && (step % 2 === 1) ? stepDur * 0.32 : 0);`
-   - 音源予約と `visualQueue.push({ trackId, time: scheduledTime, ... })` の両方に必ずこの `scheduledTime` を渡す。
-2. **8ステップ基本配列（×4コードで32ステップ展開）**:
+   - Always pass this same `scheduledTime` to both the audio node scheduling and `visualQueue.push({ trackId, time: scheduledTime, ... })`.
+2. **Base 8-step arrays (expanded to 32 steps over 4 chords)**:
 ```javascript
 const PATTERNS = {
   pumpkin: [
@@ -73,8 +73,8 @@ const PATTERNS = {
 };
 ```
 
-## 5. 音声出力時刻同期・停止処理・シームレスWAV出力
-- **時刻取得**: `const now = (audioCtx.getOutputTimestamp?.().contextTime) || audioCtx.currentTime;`
-- **減衰計算**: `visualQueue` から `event.time <= now` を消費して `track.lastNoteTime = event.time` を更新し、`energy = Math.exp(-(now - track.lastNoteTime) / 0.18)` でモーションを駆動。
-- **停止＆カーテンコール**: `Stop` 時はタイマー破棄＋`activeNodes` 全停止＆切断＋`visualQueue` クリアを即座に行い、`stageState = 'curtain_call'`（1.8秒間のお辞儀＋💀頭蓋骨落下＆拾い上げアニメ）を経て幕を閉じる。
-- **シームレスWAV**: マスターバスに `StereoDelay (time: (60/bpm)*0.75, fb: 0.22, wet: 0.18)` と `DynamicsCompressor` を配置。`OfflineAudioContext` で **64ステップ（2ループ）** をレンダリングし、残響が乗った **後半32ステップ分（`loopSamples` 〜 `loopSamples * 2`）** を切り出して44バイトRIFF WAVヘッダを付与する。
+## 5. Audio output time sync, stop handling, and seamless WAV export
+- **Reading the time**: `const now = (audioCtx.getOutputTimestamp?.().contextTime) || audioCtx.currentTime;`
+- **Decay calculation**: consume events from `visualQueue` where `event.time <= now`, update `track.lastNoteTime = event.time`, and drive motion with `energy = Math.exp(-(now - track.lastNoteTime) / 0.18)`.
+- **Stop and curtain call**: on `Stop`, immediately dispose the timer, stop and disconnect every node in `activeNodes`, and clear `visualQueue`. Then set `stageState = 'curtain_call'` (a 1.8-second bow plus the 💀 skull drop-and-pick-up animation) and close the curtains afterward.
+- **Seamless WAV**: place a `StereoDelay (time: (60/bpm)*0.75, fb: 0.22, wet: 0.18)` and a `DynamicsCompressor` on the master bus. Render **64 steps (2 loops)** with an `OfflineAudioContext`, cut out the **second 32 steps (`loopSamples` to `loopSamples * 2`)** where the reverb has built up, and prepend a 44-byte RIFF WAV header.
