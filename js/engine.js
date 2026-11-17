@@ -60,11 +60,12 @@ export function scheduleStep({ ctx, out, tracks, stepIndex, baseStepTime, stepDu
         state.pumpkinLast = freq;
         break;
       case 'skeleton':
-        if (ev === 'K') voice = skeletonKick(ctx, out, scheduledTime);
-        else if (ev === 'S') voice = skeletonSnare(ctx, out, scheduledTime);
+        // Slot A (head) picks the drum tone, Slot C (mallet) the marimba tone
+        if (ev === 'K') voice = skeletonKick(ctx, out, scheduledTime, track.slots[0]);
+        else if (ev === 'S') voice = skeletonSnare(ctx, out, scheduledTime, track.slots[0]);
         else { // 'M0'..'M3' = rib rows 1..4 = chord[0..3]
           freq = chord.chord[Number(ev[1])];
-          voice = skeletonRib(ctx, out, scheduledTime, freq);
+          voice = skeletonRib(ctx, out, scheduledTime, freq, track.slots[2]);
         }
         break;
       case 'cauldron':
@@ -98,6 +99,7 @@ function pumpkinOptions(track, prevFreq = null) {
 
 // Pitches for pokes and slot previews: a gentle walk through the current chord's scale.
 const POKE_DEGREES = [0, 2, 3, 4, 3, 2];
+const POKE_ROWS = [0, 1, 2, 3, 2, 1];   // rib rows for skeleton pokes: a short walk up and down the ribs
 
 export class AudioEngine {
   /** @param {Array} tracks live track state from main.js; read on every step, so edits apply immediately */
@@ -108,7 +110,7 @@ export class AudioEngine {
     this.timer = null;
     this.activeNodes = new Set();
     this.visualQueue = [];
-    this.motion = Object.fromEntries(tracks.map((t) => [t.id, { lastNoteTime: null, lastEvent: null }]));
+    this.motion = Object.fromEntries(tracks.map((t) => [t.id, this._freshMotion(t.id)]));
     this.startTime = 0;
     this.stepIndex = 0;
     this.stepDur = stepDuration();
@@ -117,6 +119,13 @@ export class AudioEngine {
   }
 
   get running() { return this.timer !== null; }
+
+  /** Per-track motion memory. The skeleton also remembers its kick, snare and the last rib struck by each arm. */
+  _freshMotion(id) {
+    const m = { lastNoteTime: null, lastEvent: null };
+    if (id === 'skeleton') Object.assign(m, { kickTime: null, snareTime: null, arms: [{ time: null, row: 0 }, { time: null, row: 0 }], malletCount: 0 });
+    return m;
+  }
 
   _ensureContext() {
     if (!this.ctx) {
@@ -154,7 +163,7 @@ export class AudioEngine {
     });
     this.activeNodes.clear();
     this.visualQueue.length = 0;
-    Object.values(this.motion).forEach((m) => { m.lastNoteTime = null; m.lastEvent = null; });
+    Object.keys(this.motion).forEach((id) => { this.motion[id] = this._freshMotion(id); });
     if (this.bus) { // flush the delay lines
       this.bus.dispose();
       this.bus = createMasterBus(this.ctx);
@@ -190,30 +199,66 @@ export class AudioEngine {
     return CHORD_MAP[Math.floor((idx % STEPS_PER_LOOP) / STEPS_PER_CHORD)];
   }
 
-  /** True for the tracks that can sound a one-shot note (the pumpkin so far). */
+  /** True for the tracks that can sound a one-shot note (the pumpkin and the skeleton so far). */
   hasOneShot(trackId) {
-    return trackId === 'pumpkin';
+    return trackId === 'pumpkin' || trackId === 'skeleton';
   }
 
   /**
-   * Play one note of a track right now, whether or not the loop is running and even if the track is
+   * Play a note of a track right now, whether or not the loop is running and even if the track is
    * muted (Req 2.3, 2.4). Used for pokes and for the preview after a slot change (Req 2.2).
-   * Only the pumpkin has a one-shot voice so far. Returns true when a note was scheduled.
+   * Pumpkin: one lead note. Skeleton: one rib note (the arms take turns), or, when `slot` is 0
+   * (the head / drum tone changed), a kick followed by the snare. Returns true when something was scheduled.
    * Call from a user gesture.
    */
-  async playOneShot(trackId) {
+  async playOneShot(trackId, { slot = null } = {}) {
     if (!this.hasOneShot(trackId)) return false;
     const track = this.tracks.find((t) => t.id === trackId);
     this._ensureContext();
     if (this.ctx.state !== 'running') await this.ctx.resume();
+    const ctx = this.ctx;
+    const out = this.bus.input;
     const chord = this.currentChord();
-    const degree = POKE_DEGREES[this.pokeCount++ % POKE_DEGREES.length];
-    const freq = chord.scale[degree];
-    const when = this.ctx.currentTime + 0.02;
-    // Poke notes never glide: there is no previous pitch to slide from.
-    this._register(pumpkinVoice(this.ctx, this.bus.input, when, freq, pumpkinOptions(track, null)));
-    this._enqueue({ trackId, time: when, kind: 'poke', freq, step: null });
+    const when = ctx.currentTime + 0.02;
+
+    if (trackId === 'pumpkin') {
+      const freq = chord.scale[POKE_DEGREES[this.pokeCount++ % POKE_DEGREES.length]];
+      // Poke notes never glide: there is no previous pitch to slide from.
+      this._register(pumpkinVoice(ctx, out, when, freq, pumpkinOptions(track, null)));
+      this._enqueue({ trackId, time: when, kind: 'poke', freq, step: null });
+      return true;
+    }
+
+    if (slot === 0) {
+      this._register(skeletonKick(ctx, out, when, track.slots[0]));
+      this._enqueue({ trackId, time: when, kind: 'K', freq: null, step: null });
+      this._register(skeletonSnare(ctx, out, when + 0.22, track.slots[0]));
+      this._enqueue({ trackId, time: when + 0.22, kind: 'S', freq: null, step: null });
+    } else {
+      const row = POKE_ROWS[this.pokeCount++ % POKE_ROWS.length];
+      const freq = chord.chord[row];
+      this._register(skeletonRib(ctx, out, when, freq, track.slots[2]));
+      this._enqueue({ trackId, time: when, kind: `M${row}`, freq, step: null });
+    }
     return true;
+  }
+
+  /**
+   * The xylophone-style sound of the skull falling off during the curtain call (Req 1.4):
+   * three bounces that get smaller, then a soft clack when it lands back on the neck.
+   * Times are seconds after the call began (see GAG_HITS / GAG_PLACE in skeleton-art.js).
+   * Uses the skeleton's own mallet tone. Stop or a new Play cancels it like any other note.
+   */
+  playSkullGag(hitTimes, placeTime) {
+    if (!this.ctx || !this.bus) return;
+    const track = this.tracks.find((t) => t.id === 'skeleton');
+    const start = this.ctx.currentTime + 0.02;
+    const notes = [
+      [hitTimes[0], 392.00, 1.0], [hitTimes[1], 311.13, 0.7], [hitTimes[2], 261.63, 0.45], [placeTime, 523.25, 0.55],
+    ];
+    notes.forEach(([t, freq, gain]) => {
+      this._register(skeletonRib(this.ctx, this.bus.input, start + t, freq, track.slots[2], { gain, decay: 0.28 }));
+    });
   }
 
   _tick() {
@@ -249,18 +294,31 @@ export class AudioEngine {
    */
   update() {
     const energy = Object.fromEntries(this.tracks.map((t) => [t.id, 0]));
-    if (!this.ctx) return { now: 0, energy };
+    const detail = { skeleton: { kick: 0, snare: 0, arms: [{ energy: 0, row: 0 }, { energy: 0, row: 0 }] } };
+    if (!this.ctx) return { now: 0, energy, detail };
     const now = this.getOutputTime();
     while (this.visualQueue.length && this.visualQueue[0].time <= now) {
       const e = this.visualQueue.shift();
       const m = this.motion[e.trackId];
       m.lastNoteTime = e.time;
       m.lastEvent = e;
+      if (e.trackId === 'skeleton') {
+        if (e.kind === 'K') m.kickTime = e.time;
+        else if (e.kind === 'S') m.snareTime = e.time;
+        else if (typeof e.kind === 'string' && e.kind[0] === 'M') {
+          // the two arms take turns: every rib note goes to the other arm
+          m.arms[m.malletCount++ % 2] = { time: e.time, row: Number(e.kind[1]) };
+        }
+      }
     }
-    this.tracks.forEach((t) => {
-      const m = this.motion[t.id];
-      energy[t.id] = m.lastNoteTime === null ? 0 : Math.exp(-(now - m.lastNoteTime) / TAU);
-    });
-    return { now, energy };
+    const decay = (time) => (time === null ? 0 : Math.exp(-(now - time) / TAU));
+    this.tracks.forEach((t) => { energy[t.id] = decay(this.motion[t.id].lastNoteTime); });
+    const sk = this.motion.skeleton;
+    detail.skeleton = {
+      kick: decay(sk.kickTime),
+      snare: decay(sk.snareTime),
+      arms: sk.arms.map((a) => ({ energy: decay(a.time), row: a.row })),
+    };
+    return { now, energy, detail };
   }
 }

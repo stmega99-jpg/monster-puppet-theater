@@ -333,6 +333,33 @@ body {
 @keyframes pk-blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.08); } }
 @keyframes pk-leg { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
 
+/* ---------- Skeleton puppet (Task 5) ---------- */
+/* The art brings its own <style> for variants and arm rotation (js/skeleton-art.js). These are the
+   rules that depend on the state of the show: the beat, the dozing pose and the curtain-call gag. */
+.puppet--skeleton svg { transform: none; }          /* the generic energy pulse is replaced by real motion */
+.puppet--skeleton:focus-visible { outline: 2px solid #F7C873; outline-offset: 4px; border-radius: 8px; }
+
+.sk-body {
+  transform: translate(var(--sk-bx, 0px), var(--sk-by, 0px)) rotate(var(--sk-bt, 0deg)) scale(1, var(--sk-bsy, 1));
+  transform-origin: 70px 231px;
+}
+.sk-head { transform: translateY(calc(var(--sk-kick, 0) * 4px)) rotate(calc(var(--sk-kick, 0) * 5deg)); transform-origin: 70px 143px; }
+.sk-gear { transform: rotate(calc(var(--sk-snare, 0) * -5deg)); transform-origin: 70px 106px; }
+.sk-key { transform: rotate(calc(var(--sk-kick, 0) * 70deg)); }
+
+/* hugging-knees dozing pose: sits, head resting on the knees, eyes closed */
+.puppet--skeleton.is-asleep .sk-standing { display: none; }
+.puppet--skeleton.is-asleep .sk-seated, .puppet--skeleton.is-asleep .sk-lids { display: inline; }
+.puppet--skeleton.is-asleep .sk-pupil { display: none; }
+.puppet--skeleton.is-asleep .sk-head { transform: translate(0, 22px) rotate(9deg); }
+.puppet--skeleton.is-asleep .sk-ribcage { transform: scaleY(0.95); transform-box: view-box; transform-origin: 70px 197px; }
+
+/* curtain call: the skull tumbles off. gagPose() drives the variables; the generic bow is replaced. */
+.puppet--skeleton.is-gag { z-index: 6; }
+.puppet--skeleton.is-gag .body { animation: none !important; }
+.puppet--skeleton.is-gag .sk-head { transform: translate(var(--sk-hx, 0px), var(--sk-hy, 0px)) rotate(var(--sk-hr, 0deg)); transform-origin: 70px 124px; }
+.puppet--skeleton.is-gag .sk-gear { transform: none; }
+
 /* ---------- Play / Stop buttons ---------- */
 .controls { display: flex; justify-content: center; gap: 18px; margin: 28px 0 24px; }
 .btn {

@@ -13,7 +13,7 @@
 
 ## Phase 2: Monster band members (💀, 🧪, 👻) join one by one
 
-- [ ] 5. Add all 9 parts of the 💀 Skeleton drummer (Bone Marimba) and the "skull tumbles off at the curtain-call bow" gag (_Requirements: 1.4, 2.1, 2.3, 3.1, 3.2_)
+- [x] 5. Add all 9 parts of the 💀 Skeleton drummer (Bone Marimba) and the "skull tumbles off at the curtain-call bow" gag (_Requirements: 1.4, 2.1, 2.3, 3.1, 3.2_)
   - Implement the head (top hat/wind-up key/tin crown), ribs (four boxes/brass joints/cobweb), and mallet (bone/silver spoon/twig), rib rows 1 to 4 tapping (`M0..M3` = `chord[0..3]`), the hugging-knees dozing pose, and **the curtain-call gag where the skull rolls off and the Skeleton scrambles to pick it up**.
 - [ ] 6. Add all 9 parts of the 🧪 Witch's Cauldron bassist (Acid Bubble Bass) (_Requirements: 2.1, 2.3, 3.1, 3.2_)
   - Implement the pot (cat-footed iron/patchwork brass/ceramic), ingredient (poison mushroom/frog/eyeball), and flame (candles/foxfire/bramble logs), the poison bubble particles and pop effects on notes, the simmering dozing pose, and the bow.

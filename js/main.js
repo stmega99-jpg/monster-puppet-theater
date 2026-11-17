@@ -3,6 +3,9 @@ import { Stage } from './stage.js';
 import { createPuppetElement } from './puppets.js';
 import { AudioEngine } from './engine.js';
 import { applyPumpkinParts } from './pumpkin-art.js';
+import {
+  applySkeletonParts, setArmVars, strikePose, gagPose, applyGagPose, clearGagPose, GAG_HITS, GAG_PLACE,
+} from './skeleton-art.js';
 import { isAudible } from './music.js';
 import { generateBandInfo, fileStem } from './band.js';
 import { renderPoster, posterToBlob } from './poster.js';
@@ -43,17 +46,39 @@ PUPPETS.forEach((p) => {
   puppetEls.set(p.id, el);
 });
 applyPumpkinParts(puppetEls.get('pumpkin'), tracks[0].slots);
+applySkeletonParts(puppetEls.get('skeleton'), tracks[1].slots);
 
 // ---- Poking and previews (Req 2.2, 2.3, 2.4) ----
 // A muted puppet snaps awake for the length of its one note, then dozes off again.
 const WAKE_MS = 750; // the note's energy (tau 0.18 s) has decayed below 2% by then
 const wakeUntil = {};
 
-function poke(trackId) {
+function poke(trackId, slot = null) {
   if (!engine.hasOneShot(trackId)) return;
   wakeUntil[trackId] = performance.now() + WAKE_MS;
   syncSleep();
-  engine.playOneShot(trackId).catch((err) => console.error('One-shot failed:', err));
+  engine.playOneShot(trackId, { slot }).catch((err) => console.error('One-shot failed:', err));
+}
+
+// ---- Skull tumble gag (Req 1.4): the skeleton loses its head during the curtain call ----
+// Only when the skeleton is active (audible). Its motion is a pure function of the time since the
+// call began (gagPose), so it matches the 1.8 s curtain call and the sound scheduled by the engine.
+const skeletonEl = puppetEls.get('skeleton');
+const skeletonTrack = tracks[1];
+let gag = null;
+
+function startGag() {
+  if (!isAudible(skeletonTrack, tracks)) return;
+  gag = { start: performance.now() + 20 };               // +20 ms: the sound is scheduled 20 ms ahead
+  skeletonEl.classList.add('is-gag');
+  engine.playSkullGag(GAG_HITS, GAG_PLACE);
+}
+
+function endGag() {
+  if (!gag) return;
+  gag = null;
+  skeletonEl.classList.remove('is-gag');
+  clearGagPose(skeletonEl);
 }
 
 // ---- Play / Stop ----
@@ -73,14 +98,36 @@ stage.addEventListener('stagechange', (e) => {
   // resets and restarts the loop; entering `curtain_call` stops everything immediately.
   if (state === 'open') engine.start().catch((err) => console.error('Audio start failed:', err));
   else if (state === 'curtain_call') engine.stop();
+
+  // The gag exists only inside a curtain call. Play during the call (or the end of it) cancels it.
+  if (state === 'curtain_call') startGag();
+  else endGag();
 });
 
 // ---- Motion: drive each puppet's --energy from the audio output clock ----
 function frame() {
-  const { energy } = engine.update();
+  const { energy, detail } = engine.update();
   puppetEls.forEach((el, id) => el.style.setProperty('--energy', energy[id].toFixed(3)));
   syncSleep(); // lets a poked puppet fall back asleep once its wake time is over
+  updateSkeleton(detail.skeleton);
   requestAnimationFrame(frame);
+}
+
+/** Skeleton: kick nods the head, snare jolts the hat, each rib note swings one arm onto its rib row. */
+function updateSkeleton(sk) {
+  const el = skeletonEl;
+  if (gag && el.classList.contains('is-asleep')) endGag(); // muted in the middle of the call: no gag
+  if (gag) {
+    applyGagPose(el, gagPose((performance.now() - gag.start) / 1000));
+    return;
+  }
+  el.style.setProperty('--sk-kick', sk.kick.toFixed(3));
+  el.style.setProperty('--sk-snare', sk.snare.toFixed(3));
+  ['l', 'r'].forEach((side, i) => setArmVars(el, side, strikePose(sk.arms[i].row, sk.arms[i].energy)));
+  for (let row = 0; row < 4; row++) {
+    const flash = Math.max(...sk.arms.map((a) => (a.row === row ? a.energy : 0)));
+    el.querySelector(`.sk-flash-${row}`).style.opacity = (flash * 0.9).toFixed(3);
+  }
 }
 requestAnimationFrame(frame);
 
@@ -138,7 +185,8 @@ panel.addEventListener('click', (e) => {
     t.slots[+opt.dataset.slot] = +opt.dataset.opt;
     renderPanel();
     if (t.id === 'pumpkin') applyPumpkinParts(puppetEls.get('pumpkin'), t.slots); // new look, instantly
-    poke(t.id); // Req 2.2: preview one note with the new timbre
+    if (t.id === 'skeleton') applySkeletonParts(puppetEls.get('skeleton'), t.slots);
+    poke(t.id, +opt.dataset.slot); // Req 2.2: preview one note with the new timbre
     updatePlaybill();
     return;
   }

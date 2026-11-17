@@ -1,21 +1,14 @@
-// The pumpkin has its real art (pumpkin-art.js, Task 3). The skeleton, cauldron and ghost are still
-// placeholder silhouettes; Tasks 5, 6 and 7 replace them with the real puppet art.
+// The pumpkin (pumpkin-art.js, Task 3) and the skeleton (skeleton-art.js, Task 5) have their real art.
+// The cauldron and the ghost are still placeholder silhouettes; Tasks 6 and 7 replace them.
 // The hemp control strings (rgba(212,195,163,0.35)) and the wooden control bar are shared by every puppet.
 
 import { pumpkinSVG, applyPumpkinParts, PUMPKIN_STATIC_CSS } from './pumpkin-art.js';
+import { skeletonSVG, applySkeletonParts, posterPoseVars } from './skeleton-art.js';
 
 const STRING = 'rgba(212, 195, 163, 0.35)';
 const INK = '#2C1E18';
 
 const bodies = {
-  skeleton: `
-    <rect x="42" y="112" width="56" height="44" rx="20" fill="#E8DCC4" stroke="${INK}" stroke-width="2.5"/>
-    <circle cx="58" cy="130" r="6" fill="${INK}"/><circle cx="82" cy="130" r="6" fill="${INK}"/>
-    <path d="M66 142 l4 -5 l4 5z" fill="${INK}"/>
-    <path d="M52 150 v6 M60 150 v6 M68 150 v6 M76 150 v6 M84 150 v6" stroke="${INK}" stroke-width="2"/>
-    <g fill="none" stroke="#B5A48B" stroke-width="3" stroke-linecap="round">
-      <path d="M70 158 v52"/><path d="M48 172 q22 -8 44 0 M50 186 q20 -7 40 0 M52 200 q18 -6 36 0"/>
-    </g>`,
   cauldron: `
     <ellipse cx="70" cy="132" rx="46" ry="12" fill="#1A1D24" stroke="${INK}" stroke-width="2.5"/>
     <path d="M24 132 C20 180 40 204 70 204 C100 204 120 180 116 132 Z" fill="#2B303A" stroke="${INK}" stroke-width="2.5"/>
@@ -42,6 +35,13 @@ export function createPuppetElement(puppet) {
     el.setAttribute('aria-label', `Poke the ${puppet.name}`);
     return el;
   }
+  if (puppet.id === 'skeleton') {
+    el.innerHTML = skeletonSVG(puppet.name);
+    el.tabIndex = 0;
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', `Poke the ${puppet.name}`);
+    return el;
+  }
   el.innerHTML = `
     <svg viewBox="0 0 140 240" role="img" aria-label="${puppet.name}">
       <g stroke="${STRING}" stroke-width="1.4" fill="none">
@@ -63,6 +63,7 @@ export function createPuppetElement(puppet) {
 export function puppetSVGString(puppet, slots) {
   const el = createPuppetElement(puppet);
   if (puppet.id === 'pumpkin') applyPumpkinParts(el, slots);
+  if (puppet.id === 'skeleton') applySkeletonParts(el, slots);
   const svg = el.querySelector('svg').cloneNode(true);
   const NS = 'http://www.w3.org/2000/svg';
   svg.setAttribute('xmlns', NS);
@@ -72,6 +73,9 @@ export function puppetSVGString(puppet, slots) {
   const style = document.createElementNS(NS, 'style');
   style.textContent = `.zzz { display: none; } ${puppet.id === 'pumpkin' ? PUMPKIN_STATIC_CSS : ''}`;
   svg.insertBefore(style, svg.firstChild);
+  if (puppet.id === 'skeleton') {
+    Object.entries(posterPoseVars()).forEach(([k, v]) => svg.style.setProperty(k, v)); // mid-strike pose
+  }
   return new XMLSerializer().serializeToString(svg);
 }
 
