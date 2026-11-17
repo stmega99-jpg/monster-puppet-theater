@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monster Puppet Theater</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="marquee">
+    <p class="marquee__eyebrow">— 本日限りの特別公演 —</p>
+    <h1 class="marquee__title">Monster Puppet Theater</h1>
+    <p class="marquee__sub">Jack-o'-Lantern Synth : Monster Puppet Session</p>
+  </header>
+
+  <main class="theater">
+    <!-- 額縁ステージ -->
+    <section class="proscenium" id="proscenium" data-state="closed" aria-label="人形劇ステージ">
+      <div class="frame-corner frame-corner--tl"></div>
+      <div class="frame-corner frame-corner--tr"></div>
+      <div class="frame-corner frame-corner--bl"></div>
+      <div class="frame-corner frame-corner--br"></div>
+
+      <div class="stage" id="stage">
+        <div class="backdrop"></div>
+        <div class="spotlight"></div>
+        <div class="puppets" id="puppets"></div>
+        <div class="floor"></div>
+
+        <div class="curtain curtain--left"></div>
+        <div class="curtain curtain--right"></div>
+        <div class="curtain-hint" id="curtainHint">開演をお待ちください</div>
+      </div>
+
+      <div class="valance" aria-hidden="true">
+        <div class="valance__tassel valance__tassel--l"></div>
+        <div class="valance__tassel valance__tassel--r"></div>
+      </div>
+
+      <div class="footlights" id="footlights" aria-hidden="true"></div>
+    </section>
+
+    <!-- 開演・閉演 -->
+    <div class="controls">
+      <button class="btn btn--play" id="playBtn" type="button">開演 <span>Play</span></button>
+      <button class="btn btn--stop" id="stopBtn" type="button" disabled>閉演 <span>Stop</span></button>
+    </div>
+
+    <!-- パペット選択 + 3スロットUI -->
+    <section class="workbench" aria-label="パペット編集">
+      <nav class="tabs" id="puppetTabs" role="tablist" aria-label="パペット選択"></nav>
+      <div class="panel" id="slotPanel"></div>
+    </section>
+  </main>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
