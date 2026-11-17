@@ -120,52 +120,125 @@ export function pumpkinVoice(ctx, out, when, freq, { timbre = 0, style = 0, prev
   return { nodes, sources };
 }
 
-// ---- 💀 Skeleton: drums and bone marimba (Bent Top Hat + Femur Mallet) ----------
-// Wood Kick 110 -> 45 Hz (0.30), Brush Snare (0.16), Warm Marimba sine + 4th harmonic (0.18).
-export function skeletonKick(ctx, out, when) {
+// ---- 💀 Skeleton: drums and bone marimba (design.md section 2) ------------------
+// Slot A (head) picks the kick and the snare / clap, Slot C (mallet) picks the marimba tone.
+// Gains from the design: Kick 0.30, Snare 0.16, Rib 0.18.
+export const SKELETON_KICKS = [
+  { type: 'sine',     from: 110, to: 45, sweep: 0.12, decay: 0.22 },  // 0 Bent Top Hat: Wood Kick
+  { type: 'triangle', from: 140, to: 55, sweep: 0.08, decay: 0.18 },  // 1 Wind-Up Key Head: Toy Kick
+  { type: 'sine',     from: 90,  to: 38, sweep: 0.16, decay: 0.32 },  // 2 Tin Crown: Deep Kick
+];
+
+export function skeletonKick(ctx, out, when, head = 0) {
+  const K = SKELETON_KICKS[head] ?? SKELETON_KICKS[0];
   const osc = ctx.createOscillator();
-  osc.type = 'sine';
-  pitchSweep(osc.frequency, when, 110, 45, 0.12);
+  osc.type = K.type;
+  pitchSweep(osc.frequency, when, K.from, K.to, K.sweep);
   const amp = ctx.createGain();
   osc.connect(amp).connect(out);
-  const end = percussive(amp.gain, when, 0.30, 0.003, 0.22);
+  const end = percussive(amp.gain, when, 0.30, 0.003, K.decay);
   osc.start(when);
   osc.stop(end + 0.03);
   return { nodes: [osc, amp], sources: [osc] };
 }
 
-export function skeletonSnare(ctx, out, when) {
+/** One filtered noise burst, with its own envelope. Adds its nodes to the given lists. */
+function noiseBurst(ctx, out, when, { filter, freq, q = 0.7, peak, attack, decay }, nodes, sources) {
   const src = ctx.createBufferSource();
   src.buffer = noiseBuffer(ctx);
-  const bpf = ctx.createBiquadFilter();
-  bpf.type = 'bandpass';
-  bpf.frequency.value = 4200;
-  bpf.Q.value = 0.6;
+  const f = ctx.createBiquadFilter();
+  f.type = filter;
+  f.frequency.value = freq;
+  f.Q.value = q;
   const amp = ctx.createGain();
-  src.connect(bpf).connect(amp).connect(out);
-  const end = percussive(amp.gain, when, 0.16, 0.008, 0.13); // soft attack = brush
+  src.connect(f).connect(amp).connect(out);
+  const end = percussive(amp.gain, when, peak, attack, decay);
   src.start(when);
   src.stop(end + 0.03);
-  return { nodes: [src, bpf, amp], sources: [src] };
+  nodes.push(src, f, amp);
+  sources.push(src);
 }
 
-export function skeletonRib(ctx, out, when, freq) {
-  const osc = ctx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.value = freq;
-  const harm = ctx.createOscillator();
-  harm.type = 'sine';
-  harm.frequency.value = freq * 4;
-  const harmGain = ctx.createGain();
-  harmGain.gain.value = 0.25;
+export function skeletonSnare(ctx, out, when, head = 0) {
+  const nodes = [];
+  const sources = [];
+  if (head === 1) {
+    // Snappy Snare: bright and tight, with a short tonal body
+    noiseBurst(ctx, out, when, { filter: 'highpass', freq: 2400, peak: 0.13, attack: 0.001, decay: 0.09 }, nodes, sources);
+    const body = ctx.createOscillator();
+    body.type = 'triangle';
+    body.frequency.value = 190;
+    const g = ctx.createGain();
+    body.connect(g).connect(out);
+    const end = percussive(g.gain, when, 0.07, 0.001, 0.07);
+    body.start(when); body.stop(end + 0.03);
+    nodes.push(body, g); sources.push(body);
+  } else if (head === 2) {
+    // Rim Clap: three quick bursts and a little rim click
+    [0, 0.012, 0.024].forEach((dt, i) => {
+      noiseBurst(ctx, out, when + dt, { filter: 'bandpass', freq: 1700, q: 1.1, peak: i < 2 ? 0.1 : 0.14, attack: 0.001, decay: i < 2 ? 0.02 : 0.1 }, nodes, sources);
+    });
+    const rim = ctx.createOscillator();
+    rim.type = 'sine';
+    rim.frequency.value = 1800;
+    const g = ctx.createGain();
+    rim.connect(g).connect(out);
+    const end = percussive(g.gain, when, 0.05, 0.001, 0.03);
+    rim.start(when); rim.stop(end + 0.03);
+    nodes.push(rim, g); sources.push(rim);
+  } else {
+    // Brush Snare: soft attack, no hard edge
+    noiseBurst(ctx, out, when, { filter: 'bandpass', freq: 4200, q: 0.6, peak: 0.16, attack: 0.008, decay: 0.13 }, nodes, sources);
+  }
+  return { nodes, sources };
+}
+
+/**
+ * Marimba / xylophone note on a rib (rib rows 1 to 4 are chord[0..3]).
+ * mallet 0 Femur Mallet: Warm Marimba, sine + 4th harmonic.
+ * mallet 1 Silver Spoon: Glassy Xylophone, triangle + 3rd harmonic.
+ * mallet 2 Dry Twig Baton: Wood Clack, band-passed square plus a click.
+ * `gain` and `decay` let the skull-drop sound effect reuse the same tones.
+ */
+export function skeletonRib(ctx, out, when, freq, mallet = 0, { gain = 1, decay = null } = {}) {
   const amp = ctx.createGain();
-  osc.connect(amp);
-  harm.connect(harmGain).connect(amp);
   amp.connect(out);
-  const end = percussive(amp.gain, when, 0.18, 0.002, 0.45);
-  osc.start(when); harm.start(when);
-  osc.stop(end + 0.03); harm.stop(end + 0.03);
-  return { nodes: [osc, harm, harmGain, amp], sources: [osc, harm] };
+  const nodes = [amp];
+  const sources = [];
+  const osc = (type, f, level, target = amp) => {
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.value = f;
+    const g = ctx.createGain();
+    g.gain.value = level;
+    o.connect(g).connect(target);
+    nodes.push(o, g);
+    sources.push(o);
+    return o;
+  };
+
+  let peak = 0.18 * gain, attack = 0.002, dec = decay ?? 0.45;
+  if (mallet === 1) {
+    osc('triangle', freq, 1);
+    osc('sine', freq * 3, 0.35);
+    attack = 0.001; dec = decay ?? 0.32;
+  } else if (mallet === 2) {
+    const bpf = ctx.createBiquadFilter();
+    bpf.type = 'bandpass';
+    bpf.frequency.value = freq;
+    bpf.Q.value = 5;
+    bpf.connect(amp);
+    nodes.push(bpf);
+    osc('square', freq, 1.7, bpf);
+    noiseBurst(ctx, amp, when, { filter: 'bandpass', freq: 2400, q: 1, peak: 0.35, attack: 0.001, decay: 0.02 }, nodes, sources);
+    attack = 0.001; dec = decay ?? 0.14;
+  } else {
+    osc('sine', freq, 1);
+    osc('sine', freq * 4, 0.25);
+  }
+  const end = percussive(amp.gain, when, peak, attack, dec);
+  sources.forEach((s) => { if (s instanceof OscillatorNode) { s.start(when); s.stop(end + 0.03); } });
+  return { nodes, sources };
 }
 
 // ---- 🧪 Cauldron: acid bubble bass (Cat-Footed Iron Cauldron + Beeswax Candle Bundle) ----
