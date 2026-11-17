@@ -70,7 +70,7 @@ export function scheduleStep({ ctx, out, tracks, stepIndex, baseStepTime, stepDu
         break;
       case 'cauldron':
         freq = ev === 'R' ? chord.root : ev === 'F' ? chord.fifth : chord.octave;
-        voice = cauldronVoice(ctx, out, scheduledTime, freq);
+        voice = cauldronVoice(ctx, out, scheduledTime, freq, cauldronOptions(track));
         break;
       case 'ghost': {
         const duration = holdSteps(pattern, k) * stepDur;
@@ -97,8 +97,14 @@ function pumpkinOptions(track, prevFreq = null) {
   return { timbre: track.slots[0], style: track.slots[2], prevFreq };
 }
 
+/** Slot A (pot) = waveform and filter, Slot C (flame) = envelope. */
+function cauldronOptions(track) {
+  return { pot: track.slots[0], flame: track.slots[2] };
+}
+
 // Pitches for pokes and slot previews: a gentle walk through the current chord's scale.
 const POKE_DEGREES = [0, 2, 3, 4, 3, 2];
+const POKE_BASS = ['R', 'F', 'O', 'F'];  // cauldron pokes: root, fifth, octave, fifth of the current chord
 const POKE_ROWS = [0, 1, 2, 3, 2, 1];   // rib rows for skeleton pokes: a short walk up and down the ribs
 
 export class AudioEngine {
@@ -199,15 +205,15 @@ export class AudioEngine {
     return CHORD_MAP[Math.floor((idx % STEPS_PER_LOOP) / STEPS_PER_CHORD)];
   }
 
-  /** True for the tracks that can sound a one-shot note (the pumpkin and the skeleton so far). */
+  /** True for the tracks that can sound a one-shot note (the pumpkin, the skeleton and the cauldron so far). */
   hasOneShot(trackId) {
-    return trackId === 'pumpkin' || trackId === 'skeleton';
+    return trackId === 'pumpkin' || trackId === 'skeleton' || trackId === 'cauldron';
   }
 
   /**
    * Play a note of a track right now, whether or not the loop is running and even if the track is
    * muted (Req 2.3, 2.4). Used for pokes and for the preview after a slot change (Req 2.2).
-   * Pumpkin: one lead note. Skeleton: one rib note (the arms take turns), or, when `slot` is 0
+   * Pumpkin: one lead note. Cauldron: one bass note (root, fifth, octave in turn). Skeleton: one rib note (the arms take turns), or, when `slot` is 0
    * (the head / drum tone changed), a kick followed by the snare. Returns true when something was scheduled.
    * Call from a user gesture.
    */
@@ -226,6 +232,14 @@ export class AudioEngine {
       // Poke notes never glide: there is no previous pitch to slide from.
       this._register(pumpkinVoice(ctx, out, when, freq, pumpkinOptions(track, null)));
       this._enqueue({ trackId, time: when, kind: 'poke', freq, step: null });
+      return true;
+    }
+
+    if (trackId === 'cauldron') {
+      const kind = POKE_BASS[this.pokeCount++ % POKE_BASS.length];
+      const freq = kind === 'R' ? chord.root : kind === 'F' ? chord.fifth : chord.octave;
+      this._register(cauldronVoice(ctx, out, when, freq, cauldronOptions(track)));
+      this._enqueue({ trackId, time: when, kind, freq, step: null });
       return true;
     }
 
@@ -295,6 +309,7 @@ export class AudioEngine {
   update() {
     const energy = Object.fromEntries(this.tracks.map((t) => [t.id, 0]));
     const detail = { skeleton: { kick: 0, snare: 0, arms: [{ energy: 0, row: 0 }, { energy: 0, row: 0 }] } };
+    detail.cauldron = { hits: [] };
     if (!this.ctx) return { now: 0, energy, detail };
     const now = this.getOutputTime();
     while (this.visualQueue.length && this.visualQueue[0].time <= now) {
@@ -302,6 +317,7 @@ export class AudioEngine {
       const m = this.motion[e.trackId];
       m.lastNoteTime = e.time;
       m.lastEvent = e;
+      if (e.trackId === 'cauldron') detail.cauldron.hits.push({ kind: e.kind, freq: e.freq });
       if (e.trackId === 'skeleton') {
         if (e.kind === 'K') m.kickTime = e.time;
         else if (e.kind === 'S') m.snareTime = e.time;
