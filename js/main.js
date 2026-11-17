@@ -1,6 +1,7 @@
 import { PUPPETS } from './parts.js';
 import { Stage } from './stage.js';
 import { createPuppetElement } from './puppets.js';
+import { AudioEngine } from './engine.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -9,7 +10,8 @@ const tracks = PUPPETS.map((p) => ({ id: p.id, slots: [0, 0, 0], mute: false, so
 let selected = 0;
 
 const stage = new Stage($('proscenium'));
-export { stage, tracks };
+const engine = new AudioEngine(tracks);
+export { stage, tracks, engine };
 
 // ---- Stage: build the candle footlights and the puppets ----
 const footlights = $('footlights');
@@ -41,7 +43,20 @@ stage.addEventListener('stagechange', (e) => {
   playBtn.disabled = state === 'open';
   stopBtn.disabled = state !== 'open';
   $('curtainHint').textContent = state === 'closed' ? 'The show will begin shortly' : '';
+
+  // The audio engine follows the stage. Entering `open` (also from the middle of a curtain call)
+  // resets and restarts the loop; entering `curtain_call` stops everything immediately.
+  if (state === 'open') engine.start().catch((err) => console.error('Audio start failed:', err));
+  else if (state === 'curtain_call') engine.stop();
 });
+
+// ---- Motion: drive each puppet's --energy from the audio output clock ----
+function frame() {
+  const { energy } = engine.update();
+  puppetEls.forEach((el, id) => el.style.setProperty('--energy', energy[id].toFixed(3)));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
 
 // ---- Puppet tabs + 3-slot UI ----
 const tabs = $('puppetTabs');
