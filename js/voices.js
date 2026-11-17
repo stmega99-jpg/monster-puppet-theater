@@ -1,8 +1,8 @@
 // Web Audio voices for the four tracks. Every sound is synthesized; no audio files are loaded.
 //
-// Task 2 provides one default voice per track (Slot A / Slot C option 0), so the
-// engine is audible end to end. The remaining timbre options from design.md
-// section 2 are added together with each puppet in Tasks 3, 5, 6 and 7.
+// The pumpkin has all of its Slot A and Slot C options (Task 3). The skeleton, cauldron and ghost
+// still use one default voice each (Slot A / Slot C option 0); their remaining timbre options from
+// design.md section 2 are added with each puppet in Tasks 5, 6 and 7.
 //
 // A voice function schedules its nodes and returns { nodes, sources }:
 //   nodes   - every node it created (the engine disconnects them on stop / when finished)
@@ -30,30 +30,77 @@ function noiseBuffer(ctx) {
   return buf;
 }
 
-// ---- 🎃 Pumpkin: lead synth (Crescent Eyes + Jagged Grin) ---------------------
-// triangle + sub sine, LPF 1400 Hz, staccato decay 0.16 s, gain 0.26.
-export function pumpkinVoice(ctx, out, when, freq) {
-  const osc = ctx.createOscillator();
-  osc.type = 'triangle';
-  osc.frequency.value = freq;
-  const sub = ctx.createOscillator();
-  sub.type = 'sine';
-  sub.frequency.value = freq / 2;
-  const subGain = ctx.createGain();
-  subGain.gain.value = 0.5;
+// ---- 🎃 Pumpkin: lead synth (design.md section 2, gain 0.26) -------------------
+// Slot A (eyes) picks the timbre, Slot C (mouth) picks the playing style.
+// `level` only compensates the loudness of each waveform; it is not part of the design table.
+export const PUMPKIN_TIMBRES = [
+  { type: 'triangle', sub: 0.5, lpf: 1400, q: 0.7, level: 1.0,  detunes: [0] },       // 0 Crescent Eyes: triangle + Sub sine
+  { type: 'square',   sub: 0,   lpf: 1800, q: 2.5, level: 0.8,  detunes: [0] },       // 1 Wooden Button Eyes
+  { type: 'sawtooth', sub: 0,   lpf: 2600, q: 0.7, level: 0.75, detunes: [-8, 8] },   // 2 Star Cutout Eyes: detuned saw +-8 cents
+];
+export const PUMPKIN_STYLES = [
+  { decay: 0.16 },                    // 0 Jagged Grin: staccato
+  { decay: 0.38, vibrato: 5.5 },      // 1 Little Round Mouth: vibrato 5.5 Hz
+  { decay: 0.26, glide: true },       // 2 Sly Fang Grin: portamento
+];
+const PUMPKIN_GLIDE_TIME = 0.06;
+const PUMPKIN_VIBRATO_CENTS = 14;
+
+/**
+ * @param {object} [opts]
+ * @param {number} [opts.timbre]    Slot A option (0..2)
+ * @param {number} [opts.style]     Slot C option (0..2)
+ * @param {number|null} [opts.prevFreq] previous pitch, used by the portamento style
+ */
+export function pumpkinVoice(ctx, out, when, freq, { timbre = 0, style = 0, prevFreq = null } = {}) {
+  const T = PUMPKIN_TIMBRES[timbre] ?? PUMPKIN_TIMBRES[0];
+  const S = PUMPKIN_STYLES[style] ?? PUMPKIN_STYLES[0];
+
   const lpf = ctx.createBiquadFilter();
   lpf.type = 'lowpass';
-  lpf.frequency.value = 1400;
+  lpf.frequency.value = T.lpf;
+  lpf.Q.value = T.q;
   const amp = ctx.createGain();
-
-  osc.connect(lpf);
-  sub.connect(subGain).connect(lpf);
   lpf.connect(amp).connect(out);
 
-  const end = percussive(amp.gain, when, 0.26, 0.005, 0.16);
-  osc.start(when); sub.start(when);
-  osc.stop(end + 0.03); sub.stop(end + 0.03);
-  return { nodes: [osc, sub, subGain, lpf, amp], sources: [osc, sub] };
+  const nodes = [lpf, amp];
+  const sources = [];
+  const pitched = []; // oscillators that follow vibrato / glide
+
+  const addOsc = (type, f, detune, gainValue) => {
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.detune.value = detune;
+    const start = S.glide && prevFreq ? prevFreq * (f / freq) : f;
+    osc.frequency.setValueAtTime(start, when);
+    if (start !== f) osc.frequency.exponentialRampToValueAtTime(f, when + PUMPKIN_GLIDE_TIME);
+    const g = ctx.createGain();
+    g.gain.value = gainValue;
+    osc.connect(g).connect(lpf);
+    nodes.push(osc, g);
+    sources.push(osc);
+    pitched.push(osc);
+  };
+  T.detunes.forEach((c) => addOsc(T.type, freq, c, T.level));
+  if (T.sub) addOsc('sine', freq / 2, 0, T.sub);
+
+  if (S.vibrato) {
+    const lfo = ctx.createOscillator();
+    lfo.type = 'sine';
+    lfo.frequency.value = S.vibrato;
+    const depth = ctx.createGain();
+    depth.gain.value = PUMPKIN_VIBRATO_CENTS;
+    lfo.connect(depth);
+    pitched.forEach((o) => depth.connect(o.detune));
+    nodes.push(lfo, depth);
+    sources.push(lfo);
+    lfo.start(when);
+    lfo.stop(when + 0.005 + S.decay + 0.03);
+  }
+
+  const end = percussive(amp.gain, when, 0.26, 0.005, S.decay);
+  pitched.forEach((o) => { o.start(when); o.stop(end + 0.03); });
+  return { nodes, sources };
 }
 
 // ---- 💀 Skeleton: drums and bone marimba (Bent Top Hat + Femur Mallet) ----------
