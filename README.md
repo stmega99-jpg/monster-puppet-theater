@@ -14,4 +14,5 @@ python3 -m http.server 8000   # then open http://localhost:8000
 - [x] Task 1: antique theater stage UI, curtain open/close, curtain call, 3-slot UI
 - [x] Task 2: four-track Web Audio engine (harmonic map, ensemble swing, strict stop, output-time sync)
 - [x] Task 3: pumpkin puppet (9 face parts, timbres, mouth and candle motion, poke, dozing pose)
-- [ ] Task 4 and later: see `.kiro/specs/monster-ensemble/tasks.md`
+- [x] Task 4: band name generator, storybook poster (PNG) and seamless loop recording (WAV)
+- [ ] Task 5 and later: see `.kiro/specs/monster-ensemble/tasks.md`

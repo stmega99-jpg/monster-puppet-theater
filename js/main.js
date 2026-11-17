@@ -4,6 +4,10 @@ import { createPuppetElement } from './puppets.js';
 import { AudioEngine } from './engine.js';
 import { applyPumpkinParts } from './pumpkin-art.js';
 import { isAudible } from './music.js';
+import { generateBandInfo, fileStem } from './band.js';
+import { renderPoster, posterToBlob } from './poster.js';
+import { exportLoopWav } from './wav-export.js';
+import { downloadBlob } from './download.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -135,6 +139,7 @@ panel.addEventListener('click', (e) => {
     renderPanel();
     if (t.id === 'pumpkin') applyPumpkinParts(puppetEls.get('pumpkin'), t.slots); // new look, instantly
     poke(t.id); // Req 2.2: preview one note with the new timbre
+    updatePlaybill();
     return;
   }
   const tg = e.target.closest('.toggle');
@@ -163,5 +168,41 @@ function selectPuppet(i) {
   renderPanel();
 }
 
+// ---- Band name, song title, poster and loop export (Req 4.1, 4.2, 4.3) ----
+function updatePlaybill() {
+  const info = generateBandInfo(tracks);
+  $('bandName').textContent = info.bandName;
+  $('bandTagline').textContent = info.tagline;
+  $('songTitle').textContent = info.songTitle;
+  $('songGenre').textContent = `${info.genre} \u00B7 ${info.bpm} BPM`;
+}
+
+async function runExport(button, what, work) {
+  const status = $('exportStatus');
+  button.disabled = true;
+  status.textContent = `Preparing the ${what}...`;
+  try {
+    await work();
+    status.textContent = `The ${what} is ready. Check your downloads.`;
+  } catch (err) {
+    console.error(err);
+    status.textContent = `Could not create the ${what}: ${err.message}`;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+$('posterBtn').addEventListener('click', () => runExport($('posterBtn'), 'poster', async () => {
+  const info = generateBandInfo(tracks);
+  const canvas = await renderPoster(info, tracks);
+  downloadBlob(await posterToBlob(canvas), `${fileStem(info)}-poster.png`);
+}));
+
+$('wavBtn').addEventListener('click', () => runExport($('wavBtn'), 'loop recording', async () => {
+  const info = generateBandInfo(tracks);
+  downloadBlob(await exportLoopWav(tracks), `${fileStem(info)}-loop.wav`);
+}));
+
 selectPuppet(0);
+updatePlaybill();
 syncSleep();

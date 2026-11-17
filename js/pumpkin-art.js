@@ -170,3 +170,17 @@ export function applyPumpkinParts(el, slots) {
     });
   });
 }
+
+/**
+ * The few style.css rules the pumpkin needs when it is rendered as a standalone SVG image
+ * (the poster), where the page stylesheet does not apply. Lit, eyes open, mouth in a small smile.
+ */
+export const PUMPKIN_STATIC_CSS = `
+  .pk-hole { fill: #2a1410; stroke: #2C1E18; stroke-width: 2; stroke-linejoin: round; }
+  .pk-glow { fill: url(#pk-glow); }
+  .pk-halo { opacity: 0.3; filter: blur(5px); }
+  .pk-lids { display: none; }
+  .pk-mouth { transform-box: view-box; transform-origin: 70px 165px; transform: scaleY(0.62); }
+  .pk-mouth-1 { transform-origin: 70px 175px; transform: scale(1, 0.85); }
+  .pk-mouth-2 { transform-origin: 70px 167px; }
+`;

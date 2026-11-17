@@ -12,10 +12,27 @@ const FLOOR = 0.0001;
 
 /** Percussive envelope: quick attack, exponential decay. Returns the time the voice ends. */
 function percussive(gainParam, when, peak, attack, decay) {
+  gainParam.value = FLOOR; // silent until the envelope event applies (a gain node defaults to 1)
   gainParam.setValueAtTime(FLOOR, when);
   gainParam.linearRampToValueAtTime(peak, when + attack);
   gainParam.exponentialRampToValueAtTime(FLOOR, when + attack + decay);
   return when + attack + decay;
+}
+
+/**
+ * Exponential pitch sweep that is at `from` exactly when the note starts and reaches `to` after `dur`.
+ *
+ * The first automation event is placed a few milliseconds BEFORE the oscillator starts. An event that
+ * lands on the same frame as start() makes the first samples depend on how the start time rounds to a
+ * sample, so the same note rendered at different times came out with a different phase. That broke the
+ * seamless loop: loop 2 and loop 3 of an offline render were uncorrelated for any voice that used this.
+ */
+const SWEEP_LEAD = 0.01;
+function pitchSweep(param, when, from, to, dur) {
+  const r = SWEEP_LEAD / (dur + SWEEP_LEAD);
+  const start = Math.exp((Math.log(from) - r * Math.log(to)) / (1 - r));
+  param.setValueAtTime(start, Math.max(0, when - SWEEP_LEAD));
+  param.exponentialRampToValueAtTime(to, when + dur);
 }
 
 const noiseBuffers = new WeakMap();
@@ -72,8 +89,8 @@ export function pumpkinVoice(ctx, out, when, freq, { timbre = 0, style = 0, prev
     osc.type = type;
     osc.detune.value = detune;
     const start = S.glide && prevFreq ? prevFreq * (f / freq) : f;
-    osc.frequency.setValueAtTime(start, when);
-    if (start !== f) osc.frequency.exponentialRampToValueAtTime(f, when + PUMPKIN_GLIDE_TIME);
+    if (start !== f) pitchSweep(osc.frequency, when, start, f, PUMPKIN_GLIDE_TIME);
+    else osc.frequency.value = f; // a plain value: no automation event next to start()
     const g = ctx.createGain();
     g.gain.value = gainValue;
     osc.connect(g).connect(lpf);
@@ -108,8 +125,7 @@ export function pumpkinVoice(ctx, out, when, freq, { timbre = 0, style = 0, prev
 export function skeletonKick(ctx, out, when) {
   const osc = ctx.createOscillator();
   osc.type = 'sine';
-  osc.frequency.setValueAtTime(110, when);
-  osc.frequency.exponentialRampToValueAtTime(45, when + 0.12);
+  pitchSweep(osc.frequency, when, 110, 45, 0.12);
   const amp = ctx.createGain();
   osc.connect(amp).connect(out);
   const end = percussive(amp.gain, when, 0.30, 0.003, 0.22);
@@ -204,6 +220,7 @@ export function ghostVoice(ctx, out, when, freqs, duration, level = 1) {
 
   const attack = Math.min(0.12, duration / 2);
   const release = 0.2;
+  amp.gain.value = FLOOR;
   amp.gain.setValueAtTime(FLOOR, when);
   amp.gain.linearRampToValueAtTime(1, when + attack);
   amp.gain.setValueAtTime(1, when + duration);

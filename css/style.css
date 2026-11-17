@@ -350,6 +350,30 @@ body {
 .btn:disabled { cursor: not-allowed; filter: grayscale(0.7) brightness(0.55); }
 .btn:focus-visible, .tab:focus-visible, .opt:focus-visible, .toggle:focus-visible { outline: 2px solid var(--candle); outline-offset: 3px; }
 
+/* ---------- Program plaque: band name, song title, souvenirs ---------- */
+.playbill {
+  margin: 0 auto 26px; padding: 22px 26px 18px; text-align: center; border-radius: 8px;
+  background:
+    repeating-linear-gradient(91deg, rgba(0, 0, 0, 0.12) 0 1px, transparent 1px 7px),
+    linear-gradient(180deg, #3a2620, #2a1c16);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.6), inset 0 0 0 4px var(--brass-accent), inset 0 0 0 6px rgba(0, 0, 0, 0.6), 0 14px 26px rgba(0, 0, 0, 0.55);
+}
+.playbill__eyebrow { margin: 0; font-size: 0.75rem; letter-spacing: 0.4em; text-transform: uppercase; color: var(--brass-accent); opacity: 0.85; }
+.playbill__band {
+  margin: 8px 0 2px; font-family: var(--font-display); font-size: clamp(1.4rem, 3.6vw, 2.2rem); line-height: 1.2; letter-spacing: 0.03em;
+  background: linear-gradient(180deg, #F0DCA3, #C5A059 55%, #8E6F33);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 2px 0 rgba(0, 0, 0, 0.6));
+}
+.playbill__tagline { margin: 0 0 12px; font-style: italic; font-size: 0.95rem; opacity: 0.8; }
+.playbill__song { margin: 0; font-family: var(--font-display); font-style: italic; font-size: 1.2rem; color: var(--parchment-bg); }
+.playbill__song::before { content: '\201C'; }
+.playbill__song::after { content: '\201D'; }
+.playbill__genre { margin: 2px 0 16px; font-size: 0.85rem; letter-spacing: 0.12em; opacity: 0.7; }
+.playbill__actions { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
+.btn--small { min-width: 210px; padding: 10px 20px; font-size: 1rem; letter-spacing: 0.06em; }
+.playbill__status { min-height: 1.3em; margin: 12px 0 0; font-size: 0.8rem; font-style: italic; opacity: 0.8; }
+
 /* ---------- Editor panel (parchment) ---------- */
 .tabs { display: flex; gap: 6px; padding: 0 12px; }
 .tab {

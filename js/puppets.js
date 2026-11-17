@@ -2,7 +2,7 @@
 // placeholder silhouettes; Tasks 5, 6 and 7 replace them with the real puppet art.
 // The hemp control strings (rgba(212,195,163,0.35)) and the wooden control bar are shared by every puppet.
 
-import { pumpkinSVG } from './pumpkin-art.js';
+import { pumpkinSVG, applyPumpkinParts, PUMPKIN_STATIC_CSS } from './pumpkin-art.js';
 
 const STRING = 'rgba(212, 195, 163, 0.35)';
 const INK = '#2C1E18';
@@ -55,3 +55,25 @@ export function createPuppetElement(puppet) {
     </svg>`;
   return el;
 }
+
+/**
+ * A standalone SVG string of a puppet with its current parts, for drawing onto the poster canvas.
+ * The viewBox is padded so the control bar and the shadows are not clipped. Zzz is hidden.
+ */
+export function puppetSVGString(puppet, slots) {
+  const el = createPuppetElement(puppet);
+  if (puppet.id === 'pumpkin') applyPumpkinParts(el, slots);
+  const svg = el.querySelector('svg').cloneNode(true);
+  const NS = 'http://www.w3.org/2000/svg';
+  svg.setAttribute('xmlns', NS);
+  svg.setAttribute('viewBox', '-6 -6 152 252');
+  svg.setAttribute('width', '608');
+  svg.setAttribute('height', '1008');
+  const style = document.createElementNS(NS, 'style');
+  style.textContent = `.zzz { display: none; } ${puppet.id === 'pumpkin' ? PUMPKIN_STATIC_CSS : ''}`;
+  svg.insertBefore(style, svg.firstChild);
+  return new XMLSerializer().serializeToString(svg);
+}
+
+/** Viewbox the poster uses for puppet images, so callers can scale them. */
+export const PUPPET_IMAGE_ASPECT = { width: 152, height: 252 };
