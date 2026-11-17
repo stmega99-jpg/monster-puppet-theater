@@ -142,7 +142,12 @@ body {
 .puppet:nth-child(2) { animation-duration: 5.4s; animation-delay: -1.3s; }
 .puppet:nth-child(3) { animation-duration: 4.1s; animation-delay: -2.2s; }
 .puppet:nth-child(4) { animation-duration: 6.2s; animation-delay: -0.6s; }
-.puppet svg { display: block; width: 100%; height: auto; overflow: visible; }
+.puppet svg {
+  display: block; width: 100%; height: auto; overflow: visible;
+  /* --energy (0..1) comes from the audio engine; real per-puppet motion arrives in Tasks 3, 5, 6 and 7. */
+  transform: scale(calc(1 + var(--energy, 0) * 0.05));
+  transform-origin: 50% 0;
+}
 .puppet:hover { filter: drop-shadow(0 6px 5px rgba(0, 0, 0, 0.55)) brightness(1.08); }
 
 /* Brass nameplate at the feet of the selected puppet */
