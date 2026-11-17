@@ -2,7 +2,7 @@
 
 ## Phase 1: Antique puppet stage foundation + 🎃 Pumpkin MVP + export features
 
-- [ ] 1. Build the antique wood-carved theater UI with curtain open/close and the bow (curtain call) animation (_Requirements: 1.1, 1.2, 1.3_)
+- [x] 1. Build the antique wood-carved theater UI with curtain open/close and the bow (curtain call) animation (_Requirements: 1.1, 1.2, 1.3_)
   - Build the framed stage, velvet curtains, candle footlights, and the 3-slot UI using the storybook/wood palette (`#1A1412`, `#4A3228`, `#6B1D2F`, `#F2E6D0`).
 - [ ] 2. Implement the shared four-track Web Audio engine with a harmonic map and strict stop/sync handling (_Requirements: 1.2, 1.3, 3.1_)
   - Implement the harmonic map `Cm -> Ab -> Fm -> G7` (4-note chord arrays, bass in the C2 to Ab3 range), ensemble-wide unified swing, master delay + compressor, bulk disposal of `activeNodes`, and `visualQueue` synchronization based on `getOutputTimestamp()` (sharing the swing-adjusted time).
